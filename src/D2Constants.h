@@ -1,26 +1,39 @@
 #pragma once
 
-#include <Windows.h>
-#include <cstdint>
-#include <sstream>
+#undef ERROR
+#define TEXT_WHITE	    L"\377" "c0"
+#define TEXT_RED	    L"\377" "c1"
+#define TEXT_GREEN	    L"\377" "c2"
+#define TEXT_BLUE	    L"\377" "c3"
+#define TEXT_GOLD	    L"\377" "c4"
+#define TEXT_GRAY	    L"\377" "c5"
+#define TEXT_BLACK	    L"\377" "c6"
+#define TEXT_TAN	    L"\377" "c7"
+#define TEXT_ORANGE	    L"\377" "c8"
+#define TEXT_YELLOW	    L"\377" "c9"
+#define TEXT_PURPLE	    L"\377" "c;"
+#define TEXT_DARK_GREEN	    L"\377" "c:"
+//#define TEXT_CORAL	    L"\377" "0\006"
+//#define TEXT_SAGE	    L"\377" "0\007"
+//#define TEXT_TEAL	    L"\377" "0\011"
+//#define TEXT_LIGHT_GRAY   L"\377" "0\014"
 
-#define TEXT_WHITE L"\xff" "c0"
-#define TEXT_RED L"\xff" "c1"
-#define TEXT_GREEN L"\xff" "c2"
-#define TEXT_BLUE L"\xff" "c3"
-#define TEXT_GOLD L"\xff" "c4"
-#define TEXT_GRAY L"\xff" "c5"
-#define TEXT_BLACK L"\xff" "c6"
-#define TEXT_TAN L"\xff" "c7"
-#define TEXT_ORANGE L"\xff" "c8"
-#define TEXT_YELLOW L"\xff" "c9"
-#define TEXT_PURPLE L"\xff" "c;"
-#define TEXT_DARK_GREEN L"\xff" "c:"
-#define TEXT_CORAL L"\xff" "0" "\x06"
-#define TEXT_SAGE L"\xff" "0" "\x07"
-#define TEXT_TEAL L"\xff" "0" "\x09"
-#define TEXT_LIGHT_GRAY L"\xff" "0" "\x0c"
+// onlyt for glide mode and not v114d  
+#define TEXT_CORAL	    L"\377" "c\006"	// pallet color 0x66
+#define TEXT_SAGE	    L"\377" "c\007"	// pallet color 0x82
+#define TEXT_TEAL	    L"\377" "c\011"	// pallet color 0xC8
+#define TEXT_LIGHT_GRAY	    L"\377" "c\014"	// pallet color 0xD6
 
+#define TEXT_MEDIUM_RED	    L"\377" "c*"	// c& c* c. c"
+// #define TEXT_DARK_RED    L"\377" L"c" L"\""	// c" : this does not work reliably.
+#define TEXT_MEDIUM_GREEN   L"\377" "c<"	// c<
+#define TEXT_MEDIUM_YELLOW  L"\377" "c+"	// c+ c,
+#define TEXT_MEDIUM_BLUE    L"\377" "c$"	// c$ c(
+#define TEXT_DARK_BLUE	    L"\377" "c-"	// c! c) c-
+
+// prefix+ c# c% c' c/  -> black, unreadable 
+
+/*
 template<typename Enum,
 	typename = std::enable_if_t<std::is_enum_v<Enum>>>
 	std::ostream& operator<< (std::ostream& out, Enum e) {
@@ -32,6 +45,7 @@ template<typename Enum,
 	std::wostream& operator<< (std::wostream& out, Enum e) {
 	return out << static_cast<int>(e);
 }
+*/
 
 //user defined 
 enum class D2Version : uint8_t {
@@ -39,7 +53,7 @@ enum class D2Version : uint8_t {
 	V113c,
 	V114d,
 	NONE,
-	ERR
+	ERROR,
 };
 
 //user defined
@@ -209,14 +223,14 @@ enum class PlayerClass : uint32_t {
 
 enum class ItemAnimationMode : uint32_t
 {
-	INVENTORY, 		//Item is in Storage (inventory, cube, Stash?)
-	BODY, 		//Item is Equippped
-	BELT, 		//Item is in Belt Rows
-	GROUND, 	//Item is on Ground
-	CURSOR, 	//Item is on Cursor
-	DROPPING, 	//Item is Being Dropped
-	SOCKET,		//Item is Socketed in another Item
-	TOTAL_ITEM_MODES
+    INVENTORY, 		//Item is in Storage (inventory, cube, Stash?)
+    BODY, 		//Item is Equippped
+    BELT, 		//Item is in Belt Rows
+    GROUND, 		//Item is on Ground
+    CURSOR, 		//Item is on Cursor
+    DROPPING, 		//Item is Being Dropped
+    SOCKET,		//Item is Socketed in another Item
+    TOTAL_ITEM_MODES
 };
 
 //https://d2mods.info/forum/viewtopic.php?p=487011#p487011

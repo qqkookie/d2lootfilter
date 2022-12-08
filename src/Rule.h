@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
 #include "D2Structs.h"
 #include "Condition.h"
@@ -8,11 +7,11 @@
 
 class Rule {
 private:
-	uint32_t m_LineNumber;
+	uint32_t m_LineNumber = 0;
 	std::vector<Condition*> m_Conditions;
 	std::vector<Action*> m_Actions;
 public:
-	Rule() {}
+    Rule() {}
 	bool Evaluate(Unit* pUnit);
 	void EvaluateActionResult(ActionResult* pActionResult, Unit* pItem);
 	uint32_t GetLineNumber();

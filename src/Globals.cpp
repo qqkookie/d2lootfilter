@@ -1,11 +1,14 @@
+#include <string>
 #include "Globals.h"
-#include "Action.h"
+#include "D2Constants.h"
+#include "Utils.h"
 
-D2Version GameVersion = D2Version::NONE;
-int32_t FilterLevel = 6;
-int32_t PingLevel = 6;
+int32_t FilterLevel = 1;
+int32_t PingLevel = 1;
 bool IsFilterDebug = false;
 bool IsTxtDataLoaded = false;
+
+// TODO: Warning	C6262	Function uses '20064' bytes of stack.Consider moving some data to heap.
 
 //item type linker object.
 #define ITEM_TYPE(STR, ENUM) { L#STR, static_cast<std::underlying_type_t<ItemType>>(ItemType::##ENUM##) }
@@ -547,6 +550,13 @@ std::unordered_map<std::wstring, int32_t> Rarities = {
 		KV(Unique, 7), KV(Crafted, 8), KV(Tempered, 9)
 };
 
+// Numercial order of Rarity Rare and Set are swapped.
+std::unordered_map<std::wstring, int32_t> RaritiesFixed = {
+		KV(None, 0), KV(Inferior, 1), KV(Normal, 2),
+		KV(Superior, 3), KV(Magic, 4), KV(Rare, 5), KV(Set, 6),
+		KV(Unique, 7), KV(Crafted, 8), KV(Tempered, 9)
+};
+
 std::unordered_map<std::wstring, int32_t> Qualities = {
 	KV(None, -1), KV(Normal, 0), KV(Exceptional, 1), KV(Elite, 2)
 };
@@ -563,3 +573,73 @@ static std::unordered_map<V, K> reverse_map(const std::unordered_map<K, V>& m) {
 std::unordered_map<int32_t, std::wstring> ItemTypesLookup = reverse_map(ItemTypes);
 std::unordered_map<int32_t, std::wstring> RaritiesLookup = reverse_map(Rarities);
 std::unordered_map<int32_t, std::wstring> QualitiesLookup = reverse_map(Qualities);
+
+std::unordered_map<std::wstring, int32_t> Difficulties = {
+	{ L"Act1", 1 }, { L"Act2", 2 }, { L"Act3", 3 },{ L"Act4", 4 },{ L"Act5", 5 },
+	{ L"Normal", 10 }, { L"Nightmare", 20 }, { L"Hell", 30 },
+	{ L"Normal Act1", 11 }, { L"Normal Act2", 12 }, { L"Normal Act3", 13 },
+	{ L"Normal Act4", 14 }, { L"Normal Act5", 15 },
+	{ L"Nightmare Act1", 21 }, { L"Nightmare Act2", 22 }, { L"Nightmare Act3", 23 },
+	{ L"Nightmare Act4", 24 },{ L"Nightmare Act5", 25 },
+	{ L"Hell Act1", 31}, { L"Hell Act2", 32 }, {  L"Hell Act3", 33 },
+	{ L"Hell Act4", 34 }, { L"Hell Act5", 35 },
+};
+
+#define _IT2INT(it) (static_cast<int32_t>(ItemType::it))
+std::unordered_map<std::wstring, int32_t> ItemCats = { 
+	{ L"None", _IT2INT(NONE_1) }, { L"Weapon", _IT2INT(WEAPON) }, { L"Armor", _IT2INT(ARMOR) },
+	{ L"Accessory", _IT2INT(RING) }, { L"Socketable", _IT2INT(SOCKET_FILLER) },
+	{ L"Consumable", _IT2INT(POTION) }, { L"Misc", _IT2INT(QUEST) },
+};
+#undef _IT2INT
+
+#define _IM2INT(im) (static_cast<int32_t>(ItemMode::im))
+std::unordered_map<std::wstring, int32_t> ItemModeList = { 
+	{ L"Error", _IM2INT(ERROR) }, { L"Drop", _IM2INT(DROP) }, { L"Vendor", _IM2INT(VENDOR) },
+	{ L"Pick", _IM2INT(PICK) }, { L"Inventory", _IM2INT(INVEN) }, { L"Stash", _IM2INT(STASH) },
+	{ L"Cube", _IM2INT(CUBE) }, { L"Equip", _IM2INT(EQUIP) }, { L"Belt", _IM2INT(BELT) },
+	{ L"Hiring", _IM2INT(HIRING) }, { L"Socket", _IM2INT(SOCKET) },  { L"None", _IM2INT(NONE) },
+};
+
+#include <chrono>
+#include <thread>
+
+DWORD WINAPI ShowHelpThread(LPVOID lpParameter)
+{
+    static std::vector<std::wstring> command_help = {
+	L" ",
+	L"Some D2LootFilter or Plugy commands:",
+	L" ",
+	L"/reload : Reload loot filter file and setting.",
+	L"/pl /pinglevel 1-9 : Set ping level.",
+	L"/debug : Toggle showing filter debugging info",
+	L" ",
+	L"/ip /insertpage : Insert a new page after the current page.",
+	L"/dp /deletepage : Delete current page if empty.",
+	L"/sp /swappage # : Swap the current stash page with page #.",
+	L"/tp /togglepage # : Swap currrent page with page # of opposite shared/personal page.",
+	L"/rp /renamepage name : Rename current page stash (use # for page number).",
+	L" ",
+	L"/lock /unlock : Lock/unlock mouse cursor in the window.",
+	L"/page 1-6 : Show extra stats page",
+	L"/save : Save game character without exit. (beta)",
+	L" ",
+	L"/fps /framerate : Shows in-game framerate and memory infos.",
+	L"/nopickup : Stop picking up by chicking items on ground unless item is shown.",
+	L" ",
+	L"Options : -w -vsync -ddarw -d3d -opengl -glide -3dfx -direct -txt -nosave",
+	L" ",
+    };
+
+    for (size_t ii = 0; ii < command_help.size(); ii++) {
+	PrintGameString(command_help[ii], TextColor::WHITE);
+	Sleep(1100);
+    }
+    return 0;
+}
+
+void ShowHelp()
+{
+    HANDLE th = CreateThread(NULL, 0, ShowHelpThread, NULL, 0, NULL);
+    if (th) CloseHandle(th);
+}

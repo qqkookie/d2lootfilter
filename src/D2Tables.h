@@ -1,9 +1,5 @@
 #pragma once
 
-#include <Windows.h>
-#include <cstdint>
-#include "D2Constants.h"
-
 struct ItemsTxt
 {
 	char szFlippyFile[32];					//0x00

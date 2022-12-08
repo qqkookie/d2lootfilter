@@ -1,11 +1,9 @@
 #pragma once
-#include <cstdint>
-#include "D2Structs.h"
-#include "D2Constants.h"
-#include <string>
-#include <optional>
+
 #include <unordered_map>
 #include <vector>
+#include <optional>
+#include "D2Structs.h"
 
 
 /*
@@ -180,7 +178,7 @@ public:
 //https://github.com/munificent/craftinginterpreters/blob/master/java/com/craftinginterpreters/lox/Scanner.java
 class Tokenizer {
 protected:
-	int m_Current = 0;
+	unsigned m_Current = 0;
 	std::vector<TokenizerToken*> m_Tokens;
 
 	bool IsNull(wchar_t c);

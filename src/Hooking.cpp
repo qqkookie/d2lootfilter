@@ -1,8 +1,11 @@
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <cstdint>
 #include "Hooking.h"
 
+namespace Hooking {
 //https://stackoverflow.com/a/54661410/597419
+
 bool Hooking::Hook(void* src, void* dst, int len) {
     if (len < 5) return false;
 
@@ -27,7 +30,8 @@ void Hooking::TrampolineHook(void* src, void* dst, void** orig, int len) {
 
     // Create the gateway (len + 5 for the overwritten bytes + the jmp)
     void* gateway = VirtualAlloc(0, len + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-
+    if (!gateway)
+	return;
     //Write the stolen bytes into the gateway
     memcpy(gateway, src, len);
 
@@ -43,10 +47,11 @@ void Hooking::TrampolineHook(void* src, void* dst, void** orig, int len) {
     // Place the hook at the destination
     Hook(src, dst, len);
 
-    *orig = gateway;
+    if (orig)
+        *orig = gateway;
 }
 
-//todo: refactor combine call/jmp fncs
+// TOSO: refactor combine call/jmp fncs
 void Hooking::SetCall(void* address, void* function, size_t size) {
     DWORD old_protect;
     VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &old_protect);
@@ -67,4 +72,6 @@ void Hooking::SetJmp(void* address, void* function, size_t size) {
     *reinterpret_cast<int32_t*>(static_cast<char*>(address) + 1) = reinterpret_cast<int32_t>(function) - reinterpret_cast<int32_t>(address) - 5;
 
     VirtualProtect(address, size, old_protect, &old_protect);
+}
+
 }

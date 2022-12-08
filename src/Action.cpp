@@ -1,11 +1,14 @@
-#include <Windows.h>
+// Call InitGame() before initializing any static constants in "D2Ptrs.h" 
+// to avoid "static initialization order fiasco" or race condition.
+extern int InitGame();
+static int dummy = InitGame();
+
+#include <string>
 #include <unordered_map>
 #include "Action.h"
-#include "D2Structs.h"
+#include "Configuration.h"
 #include "D2Ptrs.h"
-#include "ItemFilter.h"
-
-typedef std::wstring(*TokenReplaceFunction)(ActionResult* action, Unit* pItem);
+#include "Globals.h"
 
 #define COLOR(STR, IDX) { L"{"#STR"}", ##IDX## }
 static std::unordered_map<std::wstring, std::wstring> COLOR_TO_STRING = {
@@ -21,13 +24,20 @@ static std::unordered_map<std::wstring, std::wstring> COLOR_TO_STRING = {
 	COLOR(Orange, TEXT_ORANGE),
 	COLOR(Yellow, TEXT_YELLOW),
 	COLOR(Purple, TEXT_PURPLE),
-	COLOR(Dark Green, TEXT_DARK_GREEN),
+	COLOR(DarkGreen, TEXT_DARK_GREEN),
 	//Glide Only
 	COLOR(Coral, TEXT_CORAL),
 	COLOR(Sage, TEXT_SAGE),
 	COLOR(Teal, TEXT_TEAL),
-	COLOR(Light Gray, TEXT_LIGHT_GRAY),
-	COLOR(Light Grey, TEXT_LIGHT_GRAY)
+	COLOR(LightGray, TEXT_LIGHT_GRAY),
+	COLOR(LightGrey, TEXT_LIGHT_GRAY),
+
+	COLOR(MediumRed, TEXT_MEDIUM_RED),	    // blood red    
+	COLOR(MediumGreen, TEXT_MEDIUM_GREEN),	    // grass green
+	COLOR(MediumYellow, TEXT_MEDIUM_YELLOW),    // dim yellow
+	COLOR(MediumBlue, TEXT_MEDIUM_BLUE),	    // turquoise
+	COLOR(BlueGreen, TEXT_MEDIUM_BLUE),	    // same as medium blue
+	COLOR(DarkBlue, TEXT_DARK_BLUE),	    // hard to read
 };
 #undef COLOR
 
@@ -46,78 +56,102 @@ static std::unordered_map<std::wstring, uint8_t> COLOR_TO_PALETTE_IDX = {
 	COLOR(Orange, 0x60),
 	COLOR(Yellow, 0x0C),
 	COLOR(Purple, 0x9B),
-	COLOR(Dark Green, 0x76),
+	COLOR(DarkGreen, 0x76),
 	COLOR(Coral, 0x66),
 	COLOR(Sage, 0x82),
 	COLOR(Teal, 0xCB),
-	COLOR(Light Gray, 0xD6),
-	COLOR(Light Grey, 0xD6)
+	COLOR(LightGray, 0xD6),
+	COLOR(LightGrey, 0xD6)
 };
 #undef COLOR
 
-static std::wstring GetItemName(ActionResult* action, Unit* pItem) {
-	if (action->bItemNameSet) {
-		return action->wsItemName;
-	} else {
-		return L"{Name}";
+
+static std::wstring TokItemLevel(ActionResult* action, Unit* pItem) {
+    return std::format(L"{}", GetItemLevel(pItem));
+}
+
+static std::wstring TokItemTypeName(ActionResult* action, Unit* pItem) {
+    return ItemTypesLookup[static_cast<int32_t>(GetItemsTxt(pItem).dwCode)];
+}
+
+static std::wstring TokItemSockets(ActionResult* action, Unit* pItem) {
+    return std::to_wstring(GetD2UnitStat(pItem, Stat::ITEM_NUMSOCKETS, 0));
+}
+
+static std::wstring TokItemPrice(ActionResult* action, Unit* pItem) {
+    return std::to_wstring(GetItemPrice(pItem));
+}
+
+static std::wstring TokPotionNumber(ActionResult* action, Unit* pItem)
+{
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::HEALING_POTION)
+	|| D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::MANA_POTION)) {
+	return GetItemCode(pItem).substr(2);
+    }
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::REJUV_POTION)) {
+	std::wstring code = GetItemCode(pItem);
+	return code == L"rvl" ? L"2" : L"1";
+    }
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::POTION)) {
+	return L"1";
+    }
+    return L"";
+}
+
+static std::wstring TokRuneNumber(ActionResult* action, Unit* pItem) {
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE)) {
+	return std::to_wstring(_wtoi(GetItemCode(pItem).substr(1).c_str()));
+    }
+    return L"";
+}
+
+static std::wstring TokItemCode(ActionResult* action, Unit* pItem) {
+    return std::to_wstring(GetItemsTxt(pItem).dwCode);
+}
+
+static std::wstring TokDefense(ActionResult* action, Unit* pItem) {
+    return std::to_wstring(GetD2UnitStat(pItem, Stat::ARMORCLASS, 0));
+}
+
+static std::wstring TokAffixLevel(ActionResult* action, Unit* pItem) {
+    return std::to_wstring(GetAffixLevel(pItem));
+}
+
+static std::wstring TokNewline(ActionResult* action, Unit* pItem) {
+    return L"\n";
+}
+
+
+static std::unordered_map<std::wstring, std::wstring> TOKEN_VALUES;
+
+void EvaluteTokenValues(ActionResult *action, Unit* pItem)
+{
+	typedef std::wstring(*TokenReplaceFunction)(ActionResult* action, Unit* pItem);
+	static std::unordered_map<std::wstring, TokenReplaceFunction> TOKEN_REPLACEMENT_FUNCTIONS = {
+	{ L"{Sockets}", &TokItemSockets },
+	{ L"{Price}", &TokItemPrice },
+	{ L"{RuneNumber}", &TokRuneNumber },
+	{ L"{PotionNumber}", &TokPotionNumber },
+
+	{ L"{ItemLevel}", &TokItemLevel },
+	{ L"{ItemType}", &TokItemTypeName },
+	{ L"{ItemTCode}", &TokItemCode },
+	{ L"{AffixLevel}", &TokAffixLevel },
+	{ L"{NewLine}", &TokNewline } };
+
+	TOKEN_VALUES.clear();
+	for (auto& token : TOKEN_REPLACEMENT_FUNCTIONS) {
+		TOKEN_VALUES.insert({ token.first, (token.second)(action, pItem) }) ;
 	}
 }
 
-static std::wstring GetItemDesc(ActionResult* action, Unit* pItem) {
-	if (action->bItemDescSet) {
-		return action->wsItemDesc;
-	} else {
-		return  L"{Description}";
-	}
-}
-
-static std::wstring GetPotionNumber(ActionResult* action, Unit* pItem) {
-	if(D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::HEALING_POTION)
-		|| D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::MANA_POTION)) {
-		return GetItemCode(pItem).substr(2);
-	}
-	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::REJUV_POTION)) {
-		std::wstring code = GetItemCode(pItem);
-		return code == L"rvl" ? L"2" : L"1";
-	}
-	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::POTION)) {
-		return L"1";
-	}
-	return L"";
-}
-
-static std::wstring GetRuneNumber(ActionResult* action, Unit* pItem) {
-	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE)) {
-		return std::to_wstring(_wtoi(GetItemCode(pItem).substr(1).c_str()));
-	}
-	return L"";
-}
-
-static std::wstring Newline(ActionResult* action, Unit* pItem) {
-	return L"\n";
-}
-
-static std::wstring GetItemPrice(ActionResult* action, Unit* pItem) {
-	int nPrice = 0;
-	Unit* pPlayer = D2CLIENT_GetPlayerUnit();
-	if (pItem != NULL && pPlayer != NULL) {
-		nPrice = D2COMMON_ITEMS_GetTransactionCost(pPlayer, pItem, D2CLIENT_GetDifficulty(), D2CLIENT_GetQuestFlags(), 0x201, 1);
-	}
-	return std::to_wstring(nPrice);
-}
-
-static std::wstring GetItemSockets(ActionResult* action, Unit* pItem) {
-	return std::to_wstring(D2COMMON_STATLIST_GetUnitStatUnsigned(pItem, Stat::ITEM_NUMSOCKETS, 0));
-}
-
-
-ColorTextAction::ColorTextAction(std::wstring value, ActionType type) : Action(value, type) {
+ColorTextAction::ColorTextAction(ActionType type, std::wstring value) : Action(type, value) {
 	for (auto const& color : COLOR_TO_STRING) {
-		replace(m_Value, color.first, color.second);
+		ireplace(m_Value, color.first, color.second);
 	}
 }
 
-PaletteIndexAction::PaletteIndexAction(std::wstring value, ActionType type) : Action(value, type) {
+PaletteIndexAction::PaletteIndexAction(ActionType type, std::wstring value) : Action(type, value ) {
 	if (COLOR_TO_PALETTE_IDX.contains(value)) {
 		m_PaletteIndex = COLOR_TO_PALETTE_IDX[value];
 	}
@@ -136,7 +170,7 @@ void ShowAction::SetResult(ActionResult* action, Unit* pItem) {
 }
 
 void ContinueAction::SetResult(ActionResult* action, Unit* pItem) {
-	action->bContinue = true;
+	action->bCheck = true;
 }
 
 void SetStyleAction::SetResult(ActionResult* action, Unit* pItem) {
@@ -148,38 +182,26 @@ void SetStyleAction::SetResult(ActionResult* action, Unit* pItem) {
 }
 
 void SetNameAction::SetResult(ActionResult* action, Unit* pItem) {
-	std::unordered_map<std::wstring, TokenReplaceFunction> TOKEN_REPLACEMENT_FUNCTIONS = {
-		{ L"{Name}", &GetItemName },
-		{ L"{Sockets}", &GetItemSockets },
-		{ L"{Price}", &GetItemPrice },
-		{ L"{Rune Number}", &GetRuneNumber },
-		{ L"{Potion Number}", &GetPotionNumber },
-		{ L"{Newline}", &Newline }
-	};
+	
 	//we got here from a CONTINUE
 	std::wstring result = m_Value;
-	for (const auto& token : TOKEN_REPLACEMENT_FUNCTIONS) {
-		replace(result, token.first, token.second(action, pItem));
+	for (const auto& token : TOKEN_VALUES) {
+	    if (token.first.compare(TOK_DESC))
+		ireplace(result, token.first, token.second);
 	}
+	TOKEN_VALUES[TOK_NAME] = result;
 	action->wsItemName = result;
-	action->bItemNameSet = true;
 }
 
 void SetDescriptionAction::SetResult(ActionResult* action, Unit* pItem) {
-	std::unordered_map<std::wstring, TokenReplaceFunction> TOKEN_REPLACEMENT_FUNCTIONS = {
-		{ L"{Description}", &GetItemDesc },
-		{ L"{Sockets}", &GetItemSockets },
-		{ L"{Price}", &GetItemPrice },
-		{ L"{Rune Number}", &GetRuneNumber },
-		{ L"{Newline}", &Newline }
-	};
+
 	//we got here from a CONTINUE
 	std::wstring result = m_Value;
-	for (const auto& token : TOKEN_REPLACEMENT_FUNCTIONS) {
-		replace(result, token.first, token.second(action, pItem));
+	for (const auto& token : TOKEN_VALUES) {
+		ireplace(result, token.first, token.second);
 	}
+	TOKEN_VALUES[TOK_DESC] = result;
 	action->wsItemDesc = result;
-	action->bItemDescSet = true;
 }
 
 void SetBackgroundColorAction::SetResult(ActionResult* action, Unit* pItem) {
@@ -197,7 +219,14 @@ void SetBorderColorAction::SetResult(ActionResult* action, Unit* pItem) {
 	action->nBorderPaletteIndex = m_PaletteIndex;
 }
 
-ChatNotifyAction::ChatNotifyAction(std::wstring value) : Action(value, ActionType::CHAT_NOTIFY) {
+ChatNotifyAction::ChatNotifyAction(std::wstring value) : Action( ActionType::CHAT_NOTIFY, value) {
+
+	std::wstring arg(trim(value));
+	if ( !arg.empty() && isdigit(arg[0]) && (arg.length() == 1 || !isdigit(arg[1]))) {
+		// arg is single digit number. (no quote) Notify me when ping level is equal or lower than me.
+		value = L"{PingLevel} <= ";
+		value.push_back(arg[0]);
+	}
 	m_Expression = Parser::Parse(value.c_str());
 }
 

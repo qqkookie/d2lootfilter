@@ -1,16 +1,18 @@
+#include <string>
 #include "Rule.h"
 
 bool Rule::Evaluate(Unit* pItem) {
+	bool bResult = true;
 	for (auto& condition : m_Conditions) {
-		if (!condition->Evaluate(pItem)) {
-			return false;
-		}
+		if ( !bResult && (condition->GetType() != ConditionType::OR ))
+		    break;
+		bResult = condition->Evaluate(pItem);
 	}
-	return true;
+	return bResult;
 }
 
 void Rule::EvaluateActionResult(ActionResult* pActionResult, Unit* pItem) {
-	pActionResult->bContinue = false;
+	pActionResult->bCheck = false;
 	for (auto& action : m_Actions) {
 		action->SetResult(pActionResult, pItem);
 	}

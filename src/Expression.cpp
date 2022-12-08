@@ -1,86 +1,120 @@
-#include "Expression.h"
-#include <format>
 #include <sstream>
 #include <algorithm>
-#include "D2Ptrs.h"
-#include "Utils.h"
+#include "Expression.h"
 #include "ItemFilter.h"
+#include "D2Ptrs.h"
+#include "Globals.h"
+#include "Utils.h"
 
 
-static int32_t GetFilterLevel(Unit* pUnit) {
+static int32_t EvalFilterLevel(Unit* pItem) {
     return FilterLevel;
 }
 
-static int32_t GetPingLevel(Unit* pUnit) {
+static int32_t EvalPingLevel(Unit* pItem) {
     return PingLevel;
 }
 
-static int32_t GetPlayerLevel(Unit* pUnit) {
-    return D2COMMON_STATLIST_GetUnitStatUnsigned(D2CLIENT_GetPlayerUnit(), Stat::LEVEL, 0);
+static int32_t EvalCharacterLevel(Unit* pItem) {
+    return GetCharacterLevel();
 }
 
-static int32_t GetItemLevel(Unit* pUnit) {
-    return pUnit->pItemData->dwItemLevel;
+static int32_t EvalItemLevel(Unit* pItem) {
+    return GetItemLevel(pItem);
 }
 
-static int32_t GetLevel(Unit* pUnit) {
-    return GetItemsTxt(pUnit).nLevel;
+static int32_t EvalQualityLevel(Unit* pItem) {
+    return GetQualityLevel(pItem);
 }
 
-static int32_t GetMagicLevel(Unit* pUnit) {
-    return GetItemsTxt(pUnit).nMagicLevel;
+static int32_t EvalMagicLevel(Unit* pItem) {
+    return GetMagicLevel(pItem);
 }
 
-static int32_t GetAffixLevel(int32_t iLvl, int32_t qLvl, int32_t mLvl) {
-    if (iLvl > 99) iLvl = 99;
-    if (qLvl > iLvl) iLvl = qLvl;
-    if (mLvl > 0) return iLvl + mLvl > 99 ? 99 : iLvl + mLvl;
-    return ((iLvl) < (99 - ((qLvl) / 2)) ? (iLvl)-((qLvl) / 2) : (iLvl) * 2 - 99);
+static int32_t EvalAffixLevel(Unit* pItem) {
+    return GetAffixLevel(pItem);
 }
 
-static int32_t GetAffixLevel(Unit* pUnit) {
-    return GetAffixLevel(
-        GetItemLevel(pUnit),
-        GetLevel(pUnit),
-        GetMagicLevel(pUnit)
-    );
+static int32_t EvalCraftAffixLevel(Unit* pItem) {
+    return GetCraftAffixLevel(pItem);
 }
 
-static int32_t GetCraftAffixLevel(Unit* pUnit) {
-    int32_t cLvl = GetPlayerLevel(pUnit);
-    int32_t iLvl = GetItemLevel(pUnit);
-    return GetAffixLevel(
-        iLvl / 2 + cLvl / 2,
-        GetLevel(pUnit),
-        GetMagicLevel(pUnit)
-    );
+static int32_t EvalSocket(Unit* pItem) {
+    return GetD2UnitStat(pItem, Stat::ITEM_NUMSOCKETS, 0);
+}
+
+static int32_t EvalRandom(Unit* pItem) {
+    return (rand() % 100);
+}
+
+static int32_t EvalPrice(Unit* pItem) {
+    return GetItemPrice(pItem);
+}
+
+static int32_t EvalRuneNumber(Unit* pItem) {
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE))
+	return  std::stoi(std::string(&GetItemsTxt(pItem).szCode[1], 3));
+    return 0;
+}
+
+static int32_t EvalItemCode(Unit* pItem) {
+    return GetItemsTxt(pItem).dwCode;
+}
+
+static int32_t EvalWeaponDamage(Unit* pItem) {
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::WEAPON))
+	return ( 1 + 2*GetD2UnitStat(pItem, Stat::MINDAMAGE, 0) 
+	    + 2 * GetD2UnitStat(pItem, Stat::MAXDAMAGE, 0)) / 2;
+    return 0;
+}
+
+static int32_t EvalItemSize(Unit* pItem) {
+    ItemsTxt tt = GetItemsTxt(pItem);
+    return (tt.nInvWidth * tt.nInvHeight);
+}
+
+static int32_t EvalCharacterMaxHP(Unit* pItem) {
+    return (GetD2UnitStat(D2CLIENT_GetPlayerUnit(), Stat::MAXHP, 0));
 }
 
 static std::unordered_map<std::wstring, GlobalVariableFunction> GlobalVariables = {
-    { L"Filter Level", &GetFilterLevel },
-    { L"Ping Level", &GetPingLevel },
-    { L"Character Level", &GetPlayerLevel },
-    { L"Item Level", &GetItemLevel },
-    { L"Quality Level", &GetLevel },
-    { L"Magic Level", &GetMagicLevel },
-    { L"Affix Level", &GetAffixLevel },
-    { L"Craft Affix Level", &GetCraftAffixLevel }
+    { L"{FilterLevel}", &EvalFilterLevel },
+    { L"{PingLevel}", &EvalPingLevel },
+    { L"{CharacterLevel}", &EvalCharacterLevel },
+    { L"{ItemLevel}", &EvalItemLevel },
+    { L"{QualityLevel}", &EvalQualityLevel },
+    { L"{MagicLevel}", &EvalMagicLevel },
+    { L"{AffixLevel}", &EvalAffixLevel },
+    { L"{CraftAffixLevel}", &EvalCraftAffixLevel },
+
+    { L"{Sockets}", &EvalSocket },
+    { L"{Random99}", &EvalRandom }, 
+    { L"{Price}", &EvalPrice },
+    { L"{RuneNumber}", &EvalRuneNumber },
+    { L"{ItemCode}", &EvalItemCode },
+    { L"{WeaponDamage}", &EvalWeaponDamage },
+    { L"{ItemSize}", &EvalItemSize },
+    { L"{CharacterMaxHP}", &EvalCharacterMaxHP },
 };
 
 int32_t Logical::Evaluate(Unit* pItem) {
-    int32_t left = m_Left->Evaluate(pItem);
+    int32_t left = 0;
+    if (m_Left)
+        left = m_Left->Evaluate(pItem);
     int32_t right = m_Right->Evaluate(pItem);
     int32_t ret = 0;
     //Logger::Info("Doing %d%s%d\n", left, OPS[static_cast<uint8_t>(m_Operator)], right);
     switch (m_Operator) {
-    case Token::AND: ret = left && right; break;
-    case Token::OR: ret = left || right; break;
+    case Token::AND: ret = (left != 0) && (right != 0); break;
+    case Token::OR: ret = (left != 0) || (right != 0); break;
     case Token::EQUALS: ret = left == right; break;
     case Token::BANG_EQUALS: ret = left != right; break;
+    /*
     case Token::GREATER_THAN: ret = left > right; break;
     case Token::GREATER_THAN_EQUALS: ret = left >= right; break;
     case Token::LESS_THAN: ret = left < right; break;
     case Token::LESS_THAN_EQUALS: ret = left <= right; break;
+    */
     default:
         break;
         //error...
@@ -94,7 +128,8 @@ std::wstring Logical::ToString(Unit* pItem) {
 }
 
 void Logical::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    m_Left->SetVariables(variables);
+    if (m_Left)
+        m_Left->SetVariables(variables);
     m_Right->SetVariables(variables);
 }
 
@@ -121,7 +156,8 @@ std::wstring Binary::ToString(Unit* pItem) {
 }
 
 void Binary::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    m_Left->SetVariables(variables);
+    if (m_Left) 
+        m_Left->SetVariables(variables);
     m_Right->SetVariables(variables);
 }
 
@@ -147,7 +183,7 @@ int32_t Unary::Evaluate(Unit* pItem) {
     int32_t right = m_Right->Evaluate(pItem);
     int32_t ret = 0;
     switch (m_Operator) {
-    case Token::BANG: ret = !right; break;
+    case Token::BANG: ret = (right == 0); break;
     case Token::MINUS: ret = -1 * m_Right->Evaluate(pItem); break;
     default:
         break;
@@ -225,7 +261,8 @@ void Variable::SetVariables(std::unordered_map<std::wstring, int32_t>& variables
 
 int32_t Call::EvaluateClass(Unit* pItem, std::vector<int32_t>& args) {
     for (auto& arg : args) {
-        if (D2COMMON_ITEMS_CheckItemTypeId(pItem, static_cast<ItemType>(arg))) {
+        // item type shoudn't be ItemType::NONE
+        if (arg > 0 && D2COMMON_ITEMS_CheckItemTypeId(pItem, static_cast<ItemType>(arg))) {
             return 1;
         }
     }
@@ -262,7 +299,7 @@ int32_t Call::EvaluateChargedSkill(Unit* pItem, Stat stat, std::vector<int32_t>&
 int32_t Call::EvaluateStat(Unit* pItem, Stat stat, std::vector<int32_t>& args) {
     int32_t layer = 0;
     if (args.size() > 0) layer = args[0];
-    return D2COMMON_STATLIST_GetUnitStatUnsigned(pItem, stat, layer);
+    return GetD2UnitStat(pItem, stat, layer);
 }
 
 int32_t Call::Evaluate(Unit* pItem) {
@@ -393,11 +430,11 @@ std::wstring Tokenizer::ParseVariable(const wchar_t*& expression) {
 std::wstring Tokenizer::ParseQuotedVariable(const wchar_t*& expression) {
     int s = 1;
     expression += 1;
-    while (*expression != '"' && !IsNull(*expression)) {
+    while (*expression != '"' && *expression != '}' && !IsNull(*expression)) {
         expression += 1;
         s += 1;
     }
-    if (*expression != '"') {
+    if (!( *expression == '"' || *expression == '}')) {
         //throw error. unquoted string variable
     }
     expression += 1;
@@ -447,11 +484,12 @@ void Tokenizer::Tokenize(const wchar_t*& expression) {
         else if (*expression == L'*') { expression++; m_Tokens.push_back(new TokenizerToken(Token::MULTIPLY)); }
         else if (*expression == L'/') { expression++; m_Tokens.push_back(new TokenizerToken(Token::DIVIDE)); }
         else if (iswdigit(*expression)) { m_Tokens.push_back(new TokenizerToken(Token::NUMBER, ParseDigit(expression))); }
-        else if (*expression == L'"') { m_Tokens.push_back(new TokenizerToken(Token::VARIABLE, ParseQuotedVariable(expression))); }
+        else if (*expression == L'"'|| *expression == L'{' ) { m_Tokens.push_back(new TokenizerToken(Token::VARIABLE, ParseQuotedVariable(expression))); }
         else if (iswalpha(*expression)) { m_Tokens.push_back(new TokenizerToken(Token::VARIABLE, ParseVariable(expression))); }
         else if (iswspace(*expression)) { expression++; }
         else {
             //error...
+	    expression++;
         }
     }
 }
@@ -625,6 +663,8 @@ Expression* Parser::Parse(const wchar_t* expression) {
 
 ListExpression* Parser::Parse(Variable* lhs, const wchar_t* expression) {
     ListExpression* list = new ListExpression();
+    if (! expression || wcslen(expression) == 0)
+        return list;
     Tokenizer* tokenizer = new Tokenizer(expression);
     do {
         auto nextToken = tokenizer->Peek()->GetTokenType();

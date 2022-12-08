@@ -1,33 +1,31 @@
 #pragma once
 
-#include <Windows.h>
-#include <cstdint>
-#include "Utils.h"
-#include "D2Tables.h"
 #include "D2Structs.h"
-#include "Globals.h"
+#include "D2Tables.h"
+#include "Utils.h"
 
-static const uint32_t GAME_EXE = (uint32_t)GetModuleHandle(NULL);
-static const uint32_t DLLBASE_D2CLIENT = (uint32_t)LoadLibraryA("D2Client.dll");
-static const uint32_t DLLBASE_D2CMP = (uint32_t)LoadLibraryA("D2CMP.dll");
-static const uint32_t DLLBASE_D2COMMON = (uint32_t)LoadLibraryA("D2Common.dll");
-static const uint32_t DLLBASE_D2GAME = (uint32_t)LoadLibraryA("D2Game.dll");
-static const uint32_t DLLBASE_D2GFX = (uint32_t)LoadLibraryA("D2Gfx.dll");
-static const uint32_t DLLBASE_D2LANG = (uint32_t)LoadLibraryA("D2Lang.dll");
-static const uint32_t DLLBASE_D2LAUNCH = (uint32_t)LoadLibraryA("D2Launch.dll");
-static const uint32_t DLLBASE_D2MCPCLIENT = (uint32_t)LoadLibraryA("D2MCPClient.dll");
-static const uint32_t DLLBASE_D2MULTI = (uint32_t)LoadLibraryA("D2Multi.dll");
-static const uint32_t DLLBASE_D2NET = (uint32_t)LoadLibraryA("D2Net.dll");
-static const uint32_t DLLBASE_D2SOUND = (uint32_t)LoadLibraryA("D2Sound.dll");
-static const uint32_t DLLBASE_D2WIN = (uint32_t)LoadLibraryA("D2Win.dll");
-static const uint32_t DLLBASE_FOG = (uint32_t)LoadLibraryA("Fog.dll");
-static const uint32_t DLLBASE_STORM = (uint32_t)LoadLibraryA("Storm.dll");
+extern uint32_t GAME_EXE;		    // = (uint32_t)GetModuleHandle(NULL);
+extern uint32_t DLLBASE_D2CLIENT;	    // = (uint32_t)LoadLibraryA("D2Client.dll");
+extern uint32_t DLLBASE_D2CMP;	    //  = (uint32_t)LoadLibraryA("D2CMP.dll");
+extern uint32_t DLLBASE_D2COMMON;	    // = (uint32_t)LoadLibraryA("D2Common.dll");
+extern uint32_t DLLBASE_D2GAME;	    // = (uint32_t)LoadLibraryA("D2Game.dll");
+extern uint32_t DLLBASE_D2GFX;	    // = (uint32_t)LoadLibraryA("D2Gfx.dll");
+extern uint32_t DLLBASE_D2LANG;	    // = (uint32_t)LoadLibraryA("D2Lang.dll");
+extern uint32_t DLLBASE_D2LAUNCH;	    // = (uint32_t)LoadLibraryA("D2Launch.dll");
+extern uint32_t DLLBASE_D2MCPCLIENT;  // = (uint32_t)LoadLibraryA("D2MCPClient.dll");
+extern uint32_t DLLBASE_D2MULTI;	    // = (uint32_t)LoadLibraryA("D2Multi.dll");
+extern uint32_t DLLBASE_D2NET;	    // = (uint32_t)LoadLibraryA("D2Net.dll");
+extern uint32_t DLLBASE_D2SOUND;	    // = (uint32_t)LoadLibraryA("D2Sound.dll");
+extern uint32_t DLLBASE_D2WIN;	    // = (uint32_t)LoadLibraryA("D2Win.dll");
+extern uint32_t DLLBASE_FOG;	    // = (uint32_t)LoadLibraryA("Fog.dll");
+extern uint32_t DLLBASE_STORM;	    // = (uint32_t)LoadLibraryA("Storm.dll");
 
-#define D2FUNC(DLL, N, R, C, A, O) typedef R (C* DLL##_##N##_t) A; __declspec(selectany) extern DLL##_##N##_t DLL##_##N = (DLL##_##N##_t)GetDllOffset((GetGameVersion() > D2Version::V113c ? GAME_EXE : DLLBASE_##DLL), O);   ///
-#define D2PTR(DLL, N, T, O) __declspec(selectany) extern T* DLL##_##N = (T*)GetDllOffset((GetGameVersion() > D2Version::V113c ? GAME_EXE : DLLBASE_##DLL), O);
 
-#define F2(DLL, N, R, C, A, O110f, O113c, O114d) D2FUNC(DLL, N, R, C, A, (GetGameVersion() == D2Version::V114d ? O114d : (GetGameVersion() == D2Version::V113c ? O113c : O110f)))
-#define P2(DLL, N, T, O110f, O113c, O114d) D2PTR(DLL, N, T, (GetGameVersion() == D2Version::V114d ? O114d : (GetGameVersion() == D2Version::V113c ? O113c : O110f)))
+#define D2FUNC(DLL, N, R, C, A, O) typedef R (C* DLL##_##N##_t) A; __declspec(selectany) extern DLL##_##N##_t DLL##_##N = (DLL##_##N##_t)GetDllOffset((GameVersion() > D2Version::V113c ? GAME_EXE : DLLBASE_##DLL), O);   ///
+#define D2PTR(DLL, N, T, O) __declspec(selectany) extern T* DLL##_##N = (T*)GetDllOffset((GameVersion() > D2Version::V113c ? GAME_EXE : DLLBASE_##DLL), O);
+
+#define F2(DLL, N, R, C, A, O110f, O113c, O114d) D2FUNC(DLL, N, R, C, A, (GameVersion() == D2Version::V114d ? O114d : (GameVersion() == D2Version::V113c ? O113c : O110f)))
+#define P2(DLL, N, T, O110f, O113c, O114d) D2PTR(DLL, N, T, (GameVersion() == D2Version::V114d ? O114d : (GameVersion() == D2Version::V113c ? O113c : O110f)))
 
 //Hooks for item filter
 P2(D2CLIENT, fpGetItemDescPatch, void, 0x531C9, 0x5612C, 0xE64CE);
@@ -98,7 +96,7 @@ FUNCPTR(D2COMMON, AbsScreenToMap, void __stdcall, (long* ptMouseX, long* ptMouse
 F2(D2COMMON, ITEMS_GetTransactionCost, int, __stdcall, (Unit* pPlayer, Unit* pItem, uint8_t nDifficulty, BitBuffer* pQuestFlags, int nVendorId, int nTransactionType), -10775 , -10107, 0x22FDC0);
 F2(D2COMMON, ITEMS_CheckItemTypeId, BOOL, __stdcall, (Unit* pItem, ItemType nItemType), -10731, -10744, 0x229BB0);
 F2(D2COMMON, STATLIST_GetUnitStatUnsigned, uint32_t, __stdcall, (const Unit* pUnit, Stat nStatId, uint16_t nLayer), -10520, -10973, 0x225480);
-//todo check 1.14d
+// TODO check 1.14d
 F2(D2COMMON, DATATBLS_LoadAllTxts, void, __stdcall, (void* pMemPool, int a2, int a3), -10576, -10943, 0x219300);
 F2(D2COMMON, UNITS_FreeUnit, void, __stdcall, (Unit* pUnit), -11260, -10124, 0x220300);
 F2(D2CLIENT, DrawGameUI, void, __stdcall, (), 0x5E650, 0x285C0, 0x96B10);
@@ -118,7 +116,7 @@ F2(D2CLIENT, GetDifficulty, uint8_t, __stdcall, (void), 0xC090, 0x41930, 0x4DCD0
 F2(D2CLIENT, GetPlayerUnit, Unit*, __stdcall, (void), 0x883D0, 0xA4D60, 0x63DD0);
 
 //seems like  GetItemName in 110f is __fastcall as well as in 114d
-F2(D2CLIENT, GetItemName, BOOL, __stdcall, (Unit* pItem, wchar_t* wBuffer, uint32_t dwSize), 0x0, 0x914F0, 0x0);
+F2(D2CLIENT, GetItemName_113c, BOOL, __stdcall, (Unit* pItem, wchar_t* wBuffer, uint32_t dwSize), 0x0, 0x914F0, 0x0);
 F2(D2CLIENT, GetItemName_114d, BOOL, __fastcall, (Unit* pItem, wchar_t* wBuffer, uint32_t dwSize), 0x3D360, 0x0, 0x8C060);
 
 

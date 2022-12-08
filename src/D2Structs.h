@@ -1,7 +1,7 @@
 #pragma once
 
+#define  WIN32_LEAN_AND_MEAN 
 #include <Windows.h>
-#include <cstdint>
 #include "D2Constants.h"
 
 struct PlayerData;
@@ -495,7 +495,7 @@ struct LayerUnitStatId
 	static LayerUnitStatId Make(uint16_t wLayer, uint16_t wStatId) { return { wLayer, wStatId }; }
 	static LayerUnitStatId MakeFromStatId(uint16_t wStatId) { return { 0, wStatId }; }
 	static LayerUnitStatId FromPackedType(PackedType nPackedValue) {
-		LayerUnitStatId ls;
+	    LayerUnitStatId ls = { 0 };
 		ls.nPackedValue = nPackedValue;
 		return ls;
 	}
@@ -553,5 +553,25 @@ struct StatListEx : public StatList
 	void* fpCallBack;						//0x5C
 	Game* pGame;						//0x60
 };
+
+/*
+struct NetClient;
+
+struct PlayerData
+{
+	char		name[0x10];				//+00	Player Name
+	void*		ptQuest[3];				//+10	Quest Pointers for each difficulty
+	BYTE		uk1[0x18];				//+1C		//before : 0x14
+	void*		ptArenaUnit;			//+34	ptArena for the Unit
+	BYTE		uk2[0x4];				//+38		//before : 0x7
+	WORD		MPSourcePortalUniqueID;	//+3C	Source Portal Unique_ID
+	BYTE		uk3[0x2];				//+3E
+	WORD		MPDestPortalUniqueID;	//+40	Destination Portal Unique_ID
+	BYTE		uk4[0x06];				//+42
+	BYTE		ptObjectUnID;			//+48	Object UniqueID for TownPortals
+	BYTE		uk5[0x53];				//+49
+	NetClient* ptNetClient;			//+9C	ptClient
+};
+*/
 
 #pragma pack(pop)
