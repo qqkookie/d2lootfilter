@@ -9,8 +9,8 @@ const wchar_t* CONDITIONS[] = {
 	L"", L"Code", L"Type", L"Class", L"Rarity", L"Ethereal", L"Runeword", L"Rune",
 	L"ItemLevel", L"Quality", L"ItemId", L"ItemMode", L"Prefix", L"Suffix",
 	L"Stats", L"Identified", L"Sockets", L"Price", L"Gold",  L"Owning",
-	L"ItemCat", L"ItemSize", L"AffixLevel",
-	// L"Defense", L"Armor", L"Weapon", L"Width", L"Height",
+	L"ItemCat", L"ItemSize", L"AffixLevel", L"WeaponDamage", L"ArmorDefense", L"Defense",
+	// L"Armor", L"Weapon", L"Width", L"Height",
 	L"Or", L"Difficulty", L"AreaLevel", L"Random",
 	L"CharacterClass",    L"CharacterLevel", L"CharacterName", L"CharacterMaxHP", };
 
@@ -333,6 +333,22 @@ bool ItemSizeCondition::Evaluate(Unit* pItem) {
 bool AffixLevelCondition::Evaluate(Unit* pItem) {
     m_Left->SetValue(GetAffixLevel(pItem));
     return m_Expression->Evaluate(pItem);
+}
+
+bool WeaponDamageCondition::Evaluate(Unit* pItem) {
+	m_Left->SetValue(GetWeaponDamage(pItem));
+	return m_Expression->Evaluate(pItem);
+}
+
+bool ArmorDefenseCondition::Evaluate(Unit* pItem) {
+	m_Left->SetValue((GetD2UnitStat(pItem, Stat::ARMORCLASS, 0) * 
+		GetD2UnitStat(pItem, Stat::ITEM_ARMOR_PERCENT, 0) +50)/100);
+	return m_Expression->Evaluate(pItem);
+}
+
+bool DefenseCondition::Evaluate(Unit* pItem) {
+	m_Left->SetValue(GetD2UnitStat(pItem, Stat::ARMORCLASS, 0));
+	return m_Expression->Evaluate(pItem);
 }
 
 void DifficultyCondition::Initialize(std::wstring& variable) {

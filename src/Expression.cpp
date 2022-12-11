@@ -62,10 +62,7 @@ static int32_t EvalItemCode(Unit* pItem) {
 }
 
 static int32_t EvalWeaponDamage(Unit* pItem) {
-    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::WEAPON))
-	return ( 1 + 2*GetD2UnitStat(pItem, Stat::MINDAMAGE, 0) 
-	    + 2 * GetD2UnitStat(pItem, Stat::MAXDAMAGE, 0)) / 2;
-    return 0;
+	return GetWeaponDamage(pItem);
 }
 
 static int32_t EvalItemSize(Unit* pItem) {

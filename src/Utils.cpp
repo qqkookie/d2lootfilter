@@ -154,7 +154,25 @@ int GetItemPrice(Unit* pItem)
 	return D2COMMON_ITEMS_GetTransactionCost(pPlayer, pItem, d, D2CLIENT_GetQuestFlags(), 0x201, 1);
 }
 
-// todo: Need separate ItemMode type?
+// Averge damege * damage enhancement
+int GetWeaponDamage(Unit* pItem) 
+{
+	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::WEAPON))
+		return ((GetD2UnitStat(pItem, Stat::MINDAMAGE, 0) * GetD2UnitStat(pItem, Stat::ITEM_ARMOR_PERCENT, 0)
+			+ GetD2UnitStat(pItem, Stat::MAXDAMAGE, 0) * GetD2UnitStat(pItem, Stat::ITEM_ARMOR_PERCENT, 0)) + 100) / 200;
+	return 0;
+}
+
+// F8(STD, D2Common, 10519, 10519, 10519, 11092, 10061, 10658, 10973, 10550, 225480, int, D2GetPlayerStat, (Unit* ptChar, DWORD statID, DWORD index));//ONLY 1.11b
+// F2(D2COMMON, STATLIST_GetUnitStatUnsigned, uint32_t, __stdcall, (const Unit* pUnit, Stat nStatId, uint16_t nLayer), -10520, -10973, 0x225480);
+// int D2GetPlayerStat(Unit* ptChar, DWORD statID, DWORD index)
+
+uint32_t GetD2UnitStat(const Unit* pUnit, Stat nStatId, uint16_t nLayer)
+{
+	uint32_t rr = D2COMMON_STATLIST_GetUnitStatUnsigned(pUnit, nStatId, nLayer);
+	return rr;
+}
+
 ItemMode GetItemMode(Unit* pItem)
 {
 	if (!IsUnitItem(pItem)) return ItemMode::NONE;
@@ -189,16 +207,6 @@ bool IsItemDropped(Unit * pItem)
 {
     return (pItem->eItemAnimMode == ItemAnimationMode::DROPPING
 	|| pItem->eItemAnimMode == ItemAnimationMode::GROUND);
-}
-
-// F8(STD, D2Common, 10519, 10519, 10519, 11092, 10061, 10658, 10973, 10550, 225480, int, D2GetPlayerStat, (Unit* ptChar, DWORD statID, DWORD index));//ONLY 1.11b
-// F2(D2COMMON, STATLIST_GetUnitStatUnsigned, uint32_t, __stdcall, (const Unit* pUnit, Stat nStatId, uint16_t nLayer), -10520, -10973, 0x225480);
-// int D2GetPlayerStat(Unit* ptChar, DWORD statID, DWORD index)
-
-uint32_t GetD2UnitStat(const Unit* pUnit, Stat nStatId, uint16_t nLayer)
-{
-    uint32_t rr = D2COMMON_STATLIST_GetUnitStatUnsigned(pUnit, nStatId, nLayer);
-    return rr;
 }
 
 std::wstring GetCharacterName() 

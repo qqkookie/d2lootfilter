@@ -1,0 +1,11 @@
+.vs
+src/vcpkg_installed
+src/Release
+src/Debug
+src/.vs
+
+misc
+*.mdp
+
+# added for Microsoft(R) Visual Studio.
+*.sqlite

@@ -48,6 +48,7 @@ extern int GetAffixLevel(Unit* pItem);
 extern int GetCraftAffixLevel(Unit* pItem);
 
 extern int GetItemPrice(Unit* pItem);
+extern int GetWeaponDamage(Unit* pItem);
 extern uint32_t GetD2UnitStat(const Unit* pUnit, Stat nStatId, uint16_t nLayer);
 
 enum class ItemMode {   

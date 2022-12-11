@@ -1,28 +1,34 @@
-### d2lootfilter
+d2lootfilter
+==========
 
-d2lootfilter is a plugin that can be used with [PlugY](http://plugy.free.fr/en/index.html) or other mod systems  like [Base Mod](https://www.moddb.com/mods/basemod) to filter loot on 1.10f, 1.13c, and 1.14d. The syntax for filtering loot was made to be similar to [Path of Exile](https://pathofexile.fandom.com/wiki/Item_filter).
+d2lootfilter is a plugin that can be used with [PlugY](http://plugy.free.fr/en/index.html) or other mod systems like
+[Diablo II Base Mod](https://www.moddb.com/mods/basemod) to filter loot on 1.10f, 1.13c, and 1.14d.
+The syntax for filtering loot was made to be similar to [Path of Exile](https://pathofexile.fandom.com/wiki/Item_filter).
 
-* [Sample Filter](doc/d2lootfilter-Rules.txt)
-* [Features](#Features)
-* [Difference](#Difference)
-* [Installing](#Installing)
-* [Basic Syntax](#Basic-Syntax)
-* [Operators](#Operators)
-* [Conditions](#Conditions)
+ * [Sample Filter](doc/d2lootfilter-Rules.txt)
+ * [Features](#Features)
+ * [Improvement](#Improvement)
+ * [Installing](#Installing)
+ * [Basic Syntax](#Basic-Syntax)
+ * [Operators](#Operators)
+ * [Conditions](#Conditions)
     * [Stats](#Stats)
-* [Actions](#Actions)
-* [Styles](#Styles)
-* [Settings](#Settings)
-* [In Game Commands](#In-Game-Commands)
-* [Credits](#Credits)
+ * [Actions](#Actions)
+ * [Styles](#Styles)
+ * [Settings](#Settings)
+ * [In Game Commands](#In-Game-Commands)
+ * [Credits](#Credits)
 
-* This is improved [0.7-alpha version](https://github.com/qqkookie/d2lootfilter/tree/Kookie) by #qqkookie, based on [d2lootfiler version 0.6-alpha](https://github.com/dschu012/d2lootfilter) by #dschu012, released on Sep. 23, 2021.
-* Original README of 0.6-alpha is [here](doc/README-v6a.md)
-* Orignal fiter file example is [doc/item.filter-v6a.txt] for expert D2 user.
+This is major improved [0.7-alpha version](https://github.com/qqkookie/d2lootfilter/tree/Kookie) by @qqkookie,
+based on [d2lootfiler version 0.6-alpha](https://github.com/dschu012/d2lootfilter) by @dschu012, released on Sep. 23, 2021.
+
+Original README of 0.6-alpha is [here](doc/README-v6a.md).
+Orignal v0.6-alpha fiter example is [here](doc/item.filter-v6a.txt) for expert D2 user.
 
 **This has not been heavily tested, crashes may happen, and items may be lost**
 
-### Features
+
+### Feature
 
 * Filter loot by various attributes (still a work in progress)
 * Notifications for loot
@@ -32,52 +38,60 @@ d2lootfilter is a plugin that can be used with [PlugY](http://plugy.free.fr/en/i
 Still to do:
 
 * Error handling. Filter just silently ignores errors right now.
-* Disable sound for hidden drops
+* Disable sound for hidden drops (no plan)
 * Tier system to change filter levels in game.
 
 Example with custom item name/border/background color/inventory background color and chat notification.
 
 ![image](https://user-images.githubusercontent.com/1458109/114068726-33ed1f00-986c-11eb-8cca-686efb629e8e.png)
 
-See what rules in your config caused the item to be shown. Set background colors for charms/items to quickly find charms that need to be replaced etc...
+<br>
+
+See what rules in your config caused the item to be shown. Set background colors for charms/items
+to quickly find charms that need to be replaced etc...
 
 ![image](https://user-images.githubusercontent.com/1458109/114068812-4cf5d000-986c-11eb-9795-fd7e1d6a8683.png)
 
-### Difference
+<br>
 
-This version has few improvements over version 0.6-alpha, released Sep. 23. 2021, and uses similar but diffrent rule syntax. New features are:
+### Improvement
 
- * `Check` statement instead of `Show` ... `Continue`
- * New `Or` condition to relate two condition blocks.
- * All {token} names have no space in it, like `{Potion Number}` -> `{PotionNumber}`
- * Old quoted token style like `"Ping Level" > 2` is deprecated. Use `{PingLeve}` instead. Stats variables are excetion.
- * Few more named colors for text and background. Color namke change like `{Dark Green}` -> `{DarkGreen}`
- * `CheckNotify` may have single digit number as minimum ping level.
- * `{SaveDir}` and `{CharName}` token in `Path=` setting to set filter rule file path.
+This version has few improvements over version 0.6-alpha, and uses little different rule syntax and conditions.
+New features are:
+
+ * `Check` clause instead of `Show` ... `Continue`
+ * New `Or` condition that combines two altrnative condition lines.
+ * All \{token\} names have no space in it, like \{Potion Number\} -> \{PotionNumber\}
+ * Old quoted token style like `"Ping Level" > 2` is deprecated. Use \{PingLeve\} instead. Stats variables are exception.
+ * Few more named colors for text and background. Color name changed like \{Dark Green\} -> \{DarkGreen\}
+ * `CheckNotify` can take a digit argument as minimum ping level.
+ * In setting ini file, `Path=` filter file path may have \{SaveDir\} and \{CharName\} variable token.
  * `Rarity` order fixed: Magic < Rare < Set < Unique.
- * Condition line can span muliple physical lines with trailing comma (`,`).
+ * Long condition line can span muliple physical lines with trailing comma (,). Back slash (\\) at end of line is optional.
  * `Difficulty` condition can take game Act number. Like `Nightmare Act2` or `Act3` regardless of difficulty.
- * Additional tokens in `SetName` or `SetDescription` action: `{ItemType}`, `{ItemLevel}`, `{ItemCode}`,`{AffixLevel}`.
- * `ItemCat` condition is one of { `Weapon`, `Armor`, `Accessory`, `Socketable`, `Consumable`, `Misc` }
+ * Additional tokens in `SetName` or `SetDescription` action:
+  \{ItemType\}, \{ItemLevel\}, \{ItemCode\}, \{AffixLevel\}\.
+ * `ItemCat` condition is one of Weapon, Armor, Accessory, Socketable, Consumable, Misc.
  * `ItemSize` condition is number of squares it takes in inventory.
- * `CharacterName` (character name) and `CharacterMaxHP` (character's max HP) condition,
+ * `CharacterName` and `CharacterMaxHP` (character's max HP) condition.
  * `ItemMode` : Item placement. Drop on ground, inventory, stash, equipped, mercenary, vendor, etc ...
- * Old `Defense`, `Armor`, `Weapon`, `Hight` and `Width` conditions are removed. Defense can be replaced with `Stats {Defense}`.
- * Section name in "d2lootfilter.ini" is changed to "[D2LootFilter]" (old:"[Settings]")
- * Settings ini and filter rule file are reloaded whenever entring new game session.
- * Default `d2lootfilter.dll` is optimized for speed. DLL size is also reducend by 20%.
- * Toolset is updated to MS Visual C++ 2022 (v143).
-
+ * Old `Defense`, `Armor`, `Weapon`, `Hight` and `Width` conditions are removed.
+ * Section name in `d2lootfilter.ini` is changed to "\[D2LootFilter\]" from old "\[Settings\]".
+ * Setting can be read from "\[D2LootFilter\]" section of `BaseMod.ini` or `Plugy.ini`
+ * Settings ini and filter rule file are reloaded whenever starting new game session.
+ * `d2lootfilter.dll` is optimized for speed. DLL file size reducend by 20%.
+ * Few bug fix and `/help` chat command.
+ * Development toolset is updated to MS Visual C++ 2022 (v143).
 
 ### Installing
 
 Steps to install on PlugY:
 
 * Download the [latest zip file](https://github.com/qqkookie/d2lootfilter/releases/latest/download/d2lootfilter.zip) and unzip it.
-* Copy both d2lootfilter.dll and  d2lootfilter-Rules.txt files to your Diablo 2 directory.
-* Change `DllToLoad=` to `DllToLoad=d2lootfilter.dll` in PlugY.ini
-* Or alternatively, it can be loaded by Diablo 2 [BaseMod](https://www.moddb.com/mods/basemod) as ExtraDll. Change Basemod.ini like below. PlugY.dll can be loaded by Base Mod, too.
-
+* Copy `d2lootfilter.dll` file to your Diablo 2 install directory. And `d2lootfilter-Rules.txt` file to Diablo 2 Save directory.
+* Change `DllToLoad=` to `DllToLoad=d2lootfilter.dll` in PlugY.ini.
+* Or alternatively, it can be loaded by Diablo 2 [BaseMod](https://www.moddb.com/mods/basemod) as ExtraDll.
+Change Basemod.ini like below. PlugY.dll can be loaded by Base Mod, too.
 ```
 [ExtraDll2]
 Enabled=1
@@ -88,9 +102,16 @@ Enabled=1
 LoadDll3="d2lootfilter.dll"
 ```
 
+
 ### Basic Syntax
 
-The basic syntax is a collection of `Show`, `Hide` and `Check` condition blocks. If an item matches **all conditions** on the block, the item will respectively be hidden or shown. `Check` condition block does same condition match and action but does not show or hide action. Item matched by `Check` block will continue trying to match other condition blocks, otherwise processing stops after the first block is matched. A sample filter can be found [here](doc/d2lootfilter-Rules.txt).
+The basic syntax is a collection of `Show`, `Hide` and `Check` condition blocks.
+If an item matches **all conditions** on the block, the item will respectively be hidden or shown.
+`Check` condition block does same condition match and action but does not show or hide action.
+Use of old `Continue` clause at end of Show block is depericated.
+Item matched by `Check` block will continue trying to match other condition blocks,
+otherwise processing stops after the first `Show` or `Hide` block is matched.
+A sample filter can be found [here](doc/d2lootfilter-Rules.txt).
 
 ```
 # hides all inferior items
@@ -100,15 +121,18 @@ Hide
 # append the rune number to all runes
 Check
     Class Rune
-    SetName {Name} {Red}{RuneNumber}
+    SetName {Name} {Red} {RuneNumber}
 
 # Even rune is matched in Check block, rune will continue to next block.
-# This Show block will also match. the name carries over from the previous condiition block
+# This Show block will also match. The modified name carries over
+# from the previous condition block
 Show
     Rune >= Vex
     ChatNotify True
     MinimapIcon Purple
 ```
+
+Hiding item applies only to items dropped on ground. Items in invetory or store will show always.
 
 ### Operators
 
@@ -123,11 +147,11 @@ The operators are as followed. If no operator is specified `=` is implied.
 | `>` | Greater Than |
 | `>=` | Greater Than Equals |
 | `in X-Y` | Between values X and Y |
-| `!` | Negate True/False (unary operator) |
+| `!` | Negate True/False (unary prefix operator) |
+
+<br>
 
 ### Conditions
-
-* `,` essentially works as an `or` operator. i.e. `Type Swirling Crystal, Dimensional Shard` would match either item.
 
 | Name | Valid Values |
 |-|-|
@@ -136,12 +160,12 @@ The operators are as followed. If no operator is specified `=` is implied.
 | Class `<Operator> <Value>` | ItemType column from `itemtypes.txt`. For 1.13c and 1.14d these can be found [here](doc/Class.md). |
 | Rarity `<Rarity>` | Inferior, Normal, Superior, Magic, Rare, Set, Unique, Crafted |
 | Ethereal `<Boolean>` | Boolean True or False |
-| Runeword `<Boolean>` | Boolean True or False |
+| Runeword `<Boolean>` | Is this runeword item or not. Boolean True or False |
 | Rune `<Operator> <Value>` | Rune Name or Number. For 1.13c and 1.14d these can be found [here](doc/Runes.md). |
 | ItemLevel `<Operator> <Value>` | Number |
 | Quality `<Operator> <Quality>` | Normal, Exceptional, Elite |
 | ItemId `<Operator> <Value>` | (to do) Unique or Set ID from `sets.txt` or `uniques.txt` |
-| ItemMode `<Value>` | Item placement: { `Drop`, `Vendor`, `Inventory`, `Stash`, `Cube`, `Equip`, `Belt`, `Hiring`, `Socket`,  } |
+| ItemMode `<Value>` | Item placement: Drop, Vendor, Inventory, Stash, Cube, Equip, Belt, Hiring, Socket |
 | Prefix `<Operator> <Value>` | Prefix ID from `magicprefix.txt` (to do... human readable name) |
 | Suffix `<Operator> <Value>` | Suffix ID from `magicsuffix.txt` (to do... human readable name) |
 | Stats `<Expression>` | Expression that evaluates to true or false to filter an item based on stats. More details can be found in [Stats](#Stats) |
@@ -149,33 +173,48 @@ The operators are as followed. If no operator is specified `=` is implied.
 | Sockets `<Operator> <Number>` | Number of sockets |
 | Price `<Operator> <Value>` | Price when vendoring item |
 | Gold `<Operator> <Value>` | Gold value |
-| ItemCat `Value` |  Item category: `Weapon`, `Armor`, `Accessory`, `Socketable`, `Consumable`, `Misc` |
+| ItemCat `Value` |  Item category: Weapon, Armor, Accessory, Socketable, Consumable, Misc |
 | ItemSize `<Operator> <Number>` | Number of squares item occupys in inventory. (Width * Hight) |
 | AffixLevel `<Operator> <Number>` | Magic/rare item affix level |
+| WeaponDamage `<Operator> <Value>` | Average of min & max damage * enhanced damage |
+| ArmorDefense `<Operator> <Value>` | Item defense * enhanced defense |
 | Or | Ignore a failed condition in previous line and proceed to next condition line. |
 | Difficulty `<Operator> <Value>` | Normal, Nightmare, Hell, Act1, Act2, ... Act5, or Normal Act1, ..., Hell Act5  |
-| CharacterClass <Value>` | `Amazon`, `Assassin`, `Barbarian`, `Druid`, `Necromancer`, `Paladin`, `Sorceress` |
+| CharacterClass `<Value>` | Amazon, Assassin, Barbarian, Druid, Necromancer, Paladin, Sorceress |
 | CharacterLevel `<Operator> <Value>` | Number |
-| CharacterName <Value>` | Character name of player. Case-sensitive. |
+| CharacterName `<Value>` | Character name of player, case-sensitive. |
 | CharacterMaxHP `<Value>` | Character maximum HP |
-| Defense `<Operator> <Value>` | (REMOVED) Item defense (armor class) |
+| Defense `<Operator> <Value>` | (DEPRICATED) Item defense (armor class) or it can be replaced by `Stats {Defense}`. |
 | Armor `<Boolean>` | (REMOVED) Boolean True or False. True if item is any armor. |
 | Weapon `<Boolean>` | (REMOVED) Boolean True or False. True if item is any weapon. |
 | Width `<Operator> <Number>` | (REMOVED) Width of item in inventory |
 | Height `<Operator> <Number>` | (REMOVED) Height of item in inventory |
 
+<br>
 
-NOTE:
- * In `Rarity`: Superior < Magic < Rare < Set < Unique
- * In `ItemCat`: Helm, gloves, boots, belt, shield are `Armor`. Ring, amulet, charm, torch are `Accessory`. Gem, jewel, rune are `Socketable`.
- * Throwing axe, knife, javelin, orb, staff, wand are `Weapon`. Throwable potions, arrow and bolt are `Consumable`, not weapon.
- * Quest items and other are `Misc`. Quest weapons like "Khalim's Will" are `Weapon`.
- * `Or` condition will ignore failed result of previous line. `Or` should be used alone in separate line.
- * In ItemMode : Drop (on ground), Equip (on body), Hiring (equiped by mercenary), Belt (potion), Socket (inserted in socket), Vendor (in vendor store)
+* `,` essentially works as an `or` operator. i.e.
+`Type Swirling Crystal, Dimensional Shard` would match either item.
+* In `Rarity`: Superior < Magic < Rare < Set < Unique
+* In `ItemCat`: Helm, gloves, boots, belt, shield are `Armor`.
+Ring, amulet, charm, torch are `Accessory`. Gem, jewel, rune are `Socketable`.
+* Throwing axe, knife, javelin, orb, staff, wand are `Weapon`.
+Throwable potions, arrow and bolt are `Consumable`, not weapon.
+* Quest items and other are `Misc`. Quest weapons like "Khalim's Will" are `Weapon`.
+* `Or` condition will ignore failed result of previous line. `Or` should be used alone in separate line.
+* In `ItemMode` : Drop means on ground. Vendor in vendor store. Equip on body.
+Hiring, equiped by mercenary. Belt in potion row. Socket means inserted in socket of other item.
+
 
 ### Stats
 
-Stats are condition expressions that evaluate to true or false. i.e `"All Resists" > 0 and "Life" > 0` would match items with both all resists and life. A list of keywords that can be used in stats expressions can be found here. [Stats](doc/Stats.md), [Skills](Skills.md). These keywords must be quoted like "..."` or `{...}`. They can contain spaces like `"Amazon +%d to Bow and Crossbow Skills"` or `{Faster Hit Recovery}`.
+Stats are condition expressions that evaluate to true or false.
+i.e `"All Resists" > 0 and "Life" > 0` would match items with both all resists and life.
+A list of keywords that can be used in stats expressions can be found in these
+[Stats](doc/Stats.md), [Skills](doc/Skills.md) documents.
+These keywords must be quoted like `"..."` or `{...}`.
+Keyword contains spaces like `"Amazon +%d to Bow and Crossbow Skills"` or `{Faster Hit Recovery}`.
+
+<br>
 
 | Functions | Description |
 |-|-|
@@ -188,35 +227,61 @@ Stats are condition expressions that evaluate to true or false. i.e `"All Resist
 | `MinIn` | varargs. returns the minimum (including zeros, i.e. stats that don't exist on the item) value from a list |
 | `Max` | varargs. returns the maximum (non-zero, exclude stats that don't exist) value from a list |
 
-e.x. `Max(Stat(39), Stat(43), Stat(41), Stat(45)) > 0` can be used to filter the existance of any resistance and `MinIn(Stat(39), Stat(43), Stat(41), Stat(45)) > 0` for all resistances
+e.x. `Max(Stat(39), Stat(43), Stat(41), Stat(45)) > 0` can be used to filter the existance of
+any resistance and `MinIn(Stat(39), Stat(43), Stat(41), Stat(45)) > 0` for all resistances
 
- * Additional numeric (integer) vaiables can used in expression evalution :
-   {FilterLevel}, {PingLevel}, {CharacterLevel}, {ItemLevel}, {QualityLevel}, {MagicLevel}, {AffixLevel, {CraftAffixLevel},
-   {Sockets}, {Random99}, {Price}, {RuneNumber}, {ItemCode}, {WeaponDamage}, {ItemSize}, {CharacterMaxHP},
-   {WeaponDamage} is averge of maxmum and minimum damage of weapon. {Random99} is between 0-99.
+ * Additional numeric (integer) vaiables can used in expression evalution :<br>
+   \{FilterLevel\}, \{PingLevel\}, \{ItemLevel\}, \{QualityLevel\}, \{MagicLevel\},
+   \{AffixLevel\}, \{CraftAffixLevel\}, \{Sockets\}, \{Random99\}, \{Price\}, \{RuneNumber\},
+   \{ItemCode\}, \{WeaponDamage\}, \{ItemSize\}, \{CharacterLevel\}, \{CharacterMaxHP\}\.
+ * \{WeaponDamage\} is averge of maxmum and minimum damage of weapon. \{Random99\} is between 0-99.
+
 
 ### Actions
 
- * Name and Description can use the following color tokens. `{White}`, `{Red}` , `{Green}`(set item) , `{Blue}`(magic), `{Gold}`(unique), `{Gray}`(socket), `{Black}`, `{Tan}` (dimer {Gold}), `{Orange}`, `{Yellow}`(rare), `{Purple}`, `{DarkGreen}`.
- * Additionl text colors : {MediumRed} (blood red), {MediumGreen} (grass green, lighter than {Green}), {MediumYellow} (dim yellow than rare {Yellow}), {MediumBlue} (turquoise blue-green color), {DarkBlue} (darker than magic {Blue}, hard to read on dark backgound). These additional text color depends on graphic mode (ddraw/d3d, glide, 3dfx(d2dx)) and Diablo version(1.13c/1.14d). These text colors can not be used as pallet color.
- * Addtional pallet colors: {Coral}, {Sage}, {Teal}, {LightGray} may be used in `SetBackgroundColor`, `SetInventoryColor`, `SetBorderColor` as pallet color.
- * Name and Description can use the following special tokens: `{Price}` (item vendor price), `{Sockets}` (number of sockets), {NewLine}, {RuneNumber}, {PotionNumber}, {ItemLevel}, and {ItemType} (readable class(type) name from "Class.md"), {ItemCode} (numerical item type), {AffixLevel}.
+ * Name and Description can use the following color tokens: <br>
+ \{White\}, \{Red\}, \{Green\}\(set item color\), \{Blue\}\(magic\), \{Gold\}\(unique\), \{Gray\}\(socket\),
+ \{Black\}, \{Tan\} \(dimer \{Gold\}\), \{Orange\}, \{Yellow\}\(rare\), \{Purple\}, \{DarkGreen\}\.
+ * Additionl text colors : <br> \{MediumRed\} \(blood red\), \{MediumGreen\} \(grass green, lighter than set \{Green\}\),
+ \{MediumYellow\}\(dim yellow than rare \{Yellow\}\), \{MediumBlue\} \(turquoise blue\-green color\),
+ \{DarkBlue\} \(darker than magic \{Blue\}, hard to read on dark backgound\)\.
+ * These text colors can not be used as pallet color.
+ These additional text colors depend on graphic mode (ddraw/d3d, opengl, glide, 3dfx(d2dx)), D2 version and glider wrapper.
+ \{Coral\}, \{Sage\}, \{Teal\}, \{LightGray\} color works only on glide mode D2 v1\.13c or below\.
+ * D2 Glide wrapper [D2DX](https://github.com/bolrog/d2dx) have a glitch that displays some text colr black.
+ It is fixed by my [patch](https://github.com/qqkookie/d2dx/tree/Kookie)
+ * Addtional pallet colors: \{Coral\}, \{Sage\}, \{Teal\}, \{LightGray\} may be used
+ in `SetBackgroundColor`, `SetInventoryColor`, `SetBorderColor` as pallet color.
+ * Name and Description can use the following special tokens: <br>
+ \{Price\} \(item vendor buy price\), \{Sockets\} \(number of sockets\), \{NewLine\}, \{RuneNumber\}, \{PotionNumber\},
+ \{ItemLevel\}, \{ItemType\} (readable class(type) name from [Class.md](doc/Class.md),
+ \{ItemCode\} \(numerical item type\), \{AffixLevel\}\.
  * Note that all color names and tokens have no space in their name.
 
+<br>
 
 | Name | Valid Values |
 |-|-|
 | SetStyle `<Value>` | Sets the styling for an item. A style is a group of actions that will be applied. See [Styles](#Styles). |
-| SetName `<Value>` | Sets the name for an item. Special token `{Name}` is the base name for the item. When using continue it will append from the previous condition block. |
-| SetDescription `<Value>` | Sets the description for an item.  Special token `{Description}` is the base name for the item. When using continue it will append from the previous condition block. |
-| SetBackgroundColor `<Value>` | Sets the background color of the item when on the ground. Pallette index color or White, Red, Green, Blue, Gold, Gray, Black, Tan, Orange, Yellow, Purple, Dark Green |
-| SetInventoryColor `<Value>` | Sets the background color of the item when in your inventory. Value is a pallette index color. |
+| SetName `<Value>` | Sets the name for an item. Special token \{Name\} is the base name for the item. When using continue it will append from the previous condition block. |
+| SetDescription `<Value>` | Sets the description for an item.  Special token \{Description\} is the base name for the item. When using continue it will append from the previous condition block. |
+| SetBackgroundColor `<Value>` | Sets the background color of the item when on the ground. Pallette index color in decimal number or hexadecimal ("x3c") or White, Red, Green, Blue, Gold, Gray, Black, Tan, Orange, Yellow, Purple, DarkGreen. No curly braces (\{White\}) needed. |
+| SetInventoryColor `<Value>` | Sets the background color of the item when in your inventory. Value is a pallette index color same as SetBackgroundColor value. |
 | SetBorderColor `<Value>` | Sets the border color of the item when on the ground. Value is a pallette index color. |
-| ChatNotify `<Boolean>` or `<ndigit>` | Notify when the item drops in chat. True or False |
+| ChatNotify `<Boolean>` or `<ndigit>` \[msg\] | Notify  in chat when the item drops. True or False |
 | MinimapIcon `<Value>` | Sets the color of the item on your minimap when on the ground. Value is a pallette index color. |
 
-NOTE:
-ChatNotiy: PingLevel may mean either lower bound or higher bound for notification. When ChatNotiy argument is single digit number like `ChatNotify 2`, it is same as `ChatNotify {PingLevel} <= 2`. It will notify when ping level is LOWER than or equal to 2. Low ping level means more frequent notification. When arument is boolean expression like `ChatNotify {PingLevel} > 4`, it will notify when ping level is higer than 4.
+<br>
+
+NOTE:<br>
+`ChatNotiy`: PingLevel may mean either lower bound or higher bound for notification.
+When ChatNotiy argument is single digit number like `ChatNotify 2`,
+it is same as `ChatNotify {PingLevel} <= 2`.
+It will notify when ping level is equal to or LESS than 2.
+Low ping level means more frequent notification. This usage support optional text message.
+Old reverse pinglevel usage like `ChatNotify {PingLevel} > 4` is also supported.
+This will notify when ping level is HIGHRER than 4.
+
 
 ### Styles
 
@@ -244,7 +309,10 @@ will apply all of the `Tier 1 Items` styles to the items.
 
 ### Settings
 
-The first time you join a game with the plugin loaded it should create a `d2lootfilter.ini` settings file in your Diablo II directory. These are the following settings that can be changed.
+The first time you join a game with the plugin loaded it should create a `d2lootfilter.ini` settings file
+in your Diablo II directory. These are the following settings that can be changed.
+Or setting can be read from  "\[D2LootFilter\]" section of `BaseMod.ini` or `Plugy.ini`.
+
 
 | Setting | Description |
 |-|-|
@@ -252,11 +320,15 @@ The first time you join a game with the plugin loaded it should create a `d2loot
 | FilterLevel | (to do) Used to dynamically change how strict your filter while playing. (Currently unused, still a planned feature) Default: `1` |
 | PingLevel | Used to dynamically change how strict drop notification are while playing. Default: `1` |
 
- * Setting ("d2lootfilter.ini") and filetr file will be reloaded for each new game sessions.
- * `Path` may include `{SaveDir}` and `{CharacterName}` token. {SaveDir} is "%USERPROFILE%/Saved Games/Diablo II" dir for Diablo v1.14d version or "./Save" dir under Diablo game install folder for older versions. {CharacterName} is case-sensive name of Diablo game character, played by player.
- * If "d2lootfilter.ini" in game direcory does not exists, d2lootfilter settings can be read from "[D2LootFilter]" section of "BaseMod.ini" or "PlugY.ini".
- * PingLevel may mean either lower bound or higher bound for notification defending on ChatNotiy usage. See NOTE of Action section.
-
+ * Settings and filetr file are reloaded for each new game sessions.
+ * `Path=` setting may include \{SaveDir\} and \{CharName\} variable token.
+ \{SaveDir\} is "%USERPROFILE%/Saved Games/Diablo II" dir for Diablo v1.14d version
+ or "./Save" dir under Diablo game install folder for older versions.
+ \{CharName\} is case-sensive name of Diablo game character, user is playing.
+ * If `d2lootfilter.ini` does not exist in D2 dir, d2lootfilter settings can be read from
+ "\[D2LootFilter\]" section of `BaseMod.ini` or `PlugY.ini`.
+ * PingLevel may mean either lower bound or higher bound
+ for notification defending on ChatNotiy usage. See NOTE of Action section.
 
 ### In Game Commands
 
@@ -267,18 +339,22 @@ The filter has a few in-game commands for changing settings.
 | `/reload` | Reloads your filter. |
 | `/debug` | Toggles debugging. |
 | `/test <number>` | Tests a specific rule (by line number) against your currently hovered mouse item. |
-| `/filterlevel <number>` | Change the filter level. |
+| `/filterlevel <number>` | (to do) Change the filter level. |
 | `/pinglevel <number>` | Change the ping/notification level. |
+| `/help` | Display short chat '/command' list of d2lootfiter, D2, PlugY  |
 
- * In debug mode, all items hidden by the rules will be displayed in gray color with "*" marker to indicate it will be hidden.
-
+ * In debug mode, all items hidden by the rules will be displayed
+ in gray color with "*" marker at end to indicate it is hidden.
 
 ### Credits
 
-* Orignal author of d2lootfiter is Daniel Schumacher. It can be found [here](https://github.com/dschu012/d2lootfilter).
-* This version is forked on Nov. 25, 2022 and improved by #qqkookie. Will be merged into dschu012/master. https://github.com/qqkookie/d2lootfilter/tree/Kookie
+ * Orignal author of d2lootfiter is Daniel Schumacher (@dschu012).
+It can be found [here](https://github.com/dschu012/d2lootfilter).
+ * This version is forked on Nov. 25, 2022 and improved by @qqkookie.
+Plan to merged to dschu012/master. [Git repo](https://github.com/qqkookie/d2lootfilter/tree/Kookie)
 
-Special thanks to everyone that has shared their work at [Phrozen-Keep](https://d2mods.info/forum/viewforum.php?f=8) [(Discord)](https://discord.gg/NvfftHY).
+Special thanks to everyone that has shared their work at
+[Phrozen-Keep](https://d2mods.info/forum/viewforum.php?f=8) [(Discord)](https://discord.gg/NvfftHY).
 
 To name a few Necrolis, Lectem, Kingpin, whist, Revan, etc...
 

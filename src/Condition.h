@@ -7,8 +7,8 @@ enum class ConditionType : uint8_t {
 	NONE, CODE, TYPE, CLASS, RARITY, ETHEREAL, RUNEWORD, RUNE,
 	ITEM_LEVEL, QUALITY, ITEM_ID, ITEM_MODE, PREFIX, SUFFIX,
 	STATS, IDENTIFIED, SOCKETS, PRICE, GOLD, OWNING,
-	ITEM_CAT, ITEM_SIZE, AFFIX_LEVEL,
-	// DEFENSE, ARMOR, WEAPON, WIDTH, HEIGHT,
+	ITEM_CAT, ITEM_SIZE, AFFIX_LEVEL, WEAPON_DAMAGE, ARMOR_DEFENSE,
+	// ARMOR, WEAPON, WIDTH, HEIGHT,
 	OR, DIFFICULTY, AREA_LEVEL, RANDOM,
 	CHARACTER_CLASS, CHARACTER_LEVEL, CHARACTER_NAME, CHARACTER_MAXHP, 
 };
@@ -18,8 +18,8 @@ extern const wchar_t* CONDITIONS[];
 =     { L"", L"Code", L"Type", L"Class", L"Rarity", L"Ethereal", L"Runeword", L"Rune",
 	L"ItemLevel", L"Quality", L"ItemId", L"ItemMode", L"Prefix", L"Suffix",
 	L"Stats", L"Identified", L"Sockets", L"Price", L"Gold",  L"Owning",
-	L"ItemCat", L"ItemSize", L"AffixLevel",
-	// L"Defense", L"Armor", L"Weapon", L"Width", L"Height",
+	L"ItemCat", L"ItemSize", L"AffixLevel", L"WeaponDamage", L"ArmorDefense", L"Defense",
+	// L"Armor", L"Weapon", L"Width", L"Height",
 	L"Or", L"Difficulty", L"AreaLevel", L"Random",
 	L"CharacterClass",    L"CharacterLevel", L"CharacterName", L"CharacterMaxHP", };
 */
@@ -187,6 +187,24 @@ class ItemSizeCondition : public Condition {
 class AffixLevelCondition : public Condition {
     public:
 	AffixLevelCondition(std::wstring value) : Condition(ConditionType::AFFIX_LEVEL, value) {};
+	bool Evaluate(Unit* pItem) override;
+};
+
+class WeaponDamageCondition : public Condition {
+public:
+	WeaponDamageCondition(std::wstring value) : Condition(ConditionType::WEAPON_DAMAGE, value) {};
+	bool Evaluate(Unit* pItem) override;
+};
+
+class ArmorDefenseCondition : public Condition {
+public:
+	ArmorDefenseCondition(std::wstring value) : Condition(ConditionType::ARMOR_DEFENSE, value) {};
+	bool Evaluate(Unit* pItem) override;
+};
+
+class DefenseCondition : public Condition {
+public:
+	DefenseCondition(std::wstring value) : Condition(ConditionType::ARMOR_DEFENSE, value) {};
 	bool Evaluate(Unit* pItem) override;
 };
 
