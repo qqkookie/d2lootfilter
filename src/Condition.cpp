@@ -48,7 +48,7 @@ Condition::~Condition()
 }
 
 void Condition::Initialize(std::wstring& variables) {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
 }
 
 std::wstring Condition::ToString(Unit* pItem) {
@@ -58,8 +58,8 @@ std::wstring Condition::ToString(Unit* pItem) {
 // -------------------------------------------------
 
 void CodeCondition::Initialize(std::wstring& variables) {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(ItemCodeList);
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression->SetValueList(ItemCodeList);
 }
 
 bool CodeCondition::Evaluate(Unit* pItem) {
@@ -68,8 +68,8 @@ bool CodeCondition::Evaluate(Unit* pItem) {
 }
 
 void TypeCondition::Initialize(std::wstring& variables) {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(ItemTypeList);
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression->SetValueList(ItemTypeList);
 }
 
 bool TypeCondition::Evaluate(Unit* pItem) {
@@ -78,8 +78,9 @@ bool TypeCondition::Evaluate(Unit* pItem) {
 }
 
 void ClassCondition::Initialize(std::wstring& variable) {
-    m_Expression = Parser::ParseCall(Token::CLASS, m_Value.c_str());
-    m_Expression->SetVariables(ItemTypes);  // from Globals.c
+	m_Expression = new ListExpression();
+	m_Expression->Push(Parser::ParseCall(Token::CLASS, m_Value.c_str()));
+	m_Expression->SetValueList(ItemTypes);  // from Globals.c
 }
 
 bool ClassCondition::Evaluate(Unit* pItem) {
@@ -102,7 +103,7 @@ bool ClassCondition::Evaluate(Unit* pItem) {
 
 void RarityCondition::Initialize(std::wstring& variable) {
     m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(RaritiesFixed);
+    m_Expression->SetValueList(RaritiesFixed);
 }
 
 bool RarityCondition::Evaluate(Unit* pItem) {
@@ -139,8 +140,8 @@ bool RunewordCondition::Evaluate(Unit* pItem) {
 }
 
 void RuneCondition::Initialize(std::wstring& variable) {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(RuneList);
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression->SetValueList(RuneList);
 }
 
 bool RuneCondition::Evaluate(Unit* pItem) {
@@ -158,8 +159,8 @@ bool ItemLevelCondition::Evaluate(Unit* pItem) {
 }
 
 void QualityCondition::Initialize(std::wstring& variable) {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(Qualities);
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression->SetValueList(Qualities);
 }
 
 bool QualityCondition::Evaluate(Unit* pItem) {
@@ -173,9 +174,8 @@ bool ItemIdCondition::Evaluate(Unit* pItem) {
 }
 
 void ItemModeCondition::Initialize(std::wstring& variables) {
-    // m_Left = new Variable();
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(ItemModeList);
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression->SetValueList(ItemModeList);
 }
 
 bool ItemModeCondition::Evaluate(Unit* pItem) {
@@ -216,7 +216,8 @@ void StatsCondition::Initialize(std::wstring& variables) {
     for (auto& stat : CustomStats) {
 	replace(m_Value, stat.first, stat.second);
     }
-    m_Expression = Parser::Parse(m_Value.c_str());
+    m_Expression = new ListExpression();
+    m_Expression->Push(Parser::Parse(m_Value.c_str()));
 }
 bool StatsCondition::Evaluate(Unit* pItem) {
     return m_Expression->Evaluate(pItem);
@@ -292,7 +293,7 @@ bool OwningCondition::Evaluate(Unit* pItem) {
 // Charm or Ring is Accessory. Gem, Jewel, Rune is Socketable. Throwing potion or Arrow is Consumable. Quest item is Misc. 
 void ItemCatCondition::Initialize(std::wstring& variables) {
     m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(ItemCats);
+    m_Expression->SetValueList(ItemCats);
 }
 
 bool ItemCatCondition::Evaluate(Unit* pItem) {
@@ -352,9 +353,8 @@ bool DefenseCondition::Evaluate(Unit* pItem) {
 }
 
 void DifficultyCondition::Initialize(std::wstring& variable) {
-    // m_Left = new Variable();
     m_Expression = Parser::Parse(m_Left, m_Value.c_str());
-    m_Expression->SetVariables(Difficulties);
+    m_Expression->SetValueList(Difficulties);
 }
 
 bool DifficultyCondition::Evaluate(Unit* pItem) {
@@ -383,7 +383,7 @@ bool RandomCondition::Evaluate(Unit* pItem) {
 
 void CharacterClassCondition::Initialize(std::wstring& variables) 
 {
-    m_Expression = Parser::Parse(m_Left, m_Value.c_str());
+	m_Expression = Parser::Parse(m_Left, m_Value.c_str());
 
     std::unordered_map<std::wstring, int32_t> list;
     DataTables* sgptDataTables = *D2COMMON_gpDataTables;
@@ -393,7 +393,7 @@ void CharacterClassCondition::Initialize(std::wstring& variables)
 	className = trim(className);
 	list[className] = i;
     }
-    m_Expression->SetVariables(list);
+    m_Expression->SetValueList(list);
 }
 
 bool CharacterClassCondition::Evaluate(Unit* pItem) {

@@ -33,8 +33,8 @@ class Condition {
 	Variable* m_Left;
 	ListExpression* m_Expression;
     public:
-	Condition(ConditionType type, std::wstring value)
-	    : m_Type(type), m_Value(value), m_Left(new Variable()), m_Expression(nullptr) {};
+	Condition(ConditionType type, std::wstring value) : m_Type(type), m_Value(value),
+		    m_Left(new Variable(L"")), m_Expression(nullptr) {};
 	~Condition();
 
 	ConditionType GetType() { return m_Type; }
@@ -58,8 +58,6 @@ class TypeCondition : public Condition {
 };
 
 class ClassCondition : public Condition {
-    protected:
-	Expression* m_Expression = nullptr;
     public:
 	ClassCondition(std::wstring value) : Condition(ConditionType::CLASS, value) {};
 	void Initialize(std::wstring& variables) override;
@@ -133,8 +131,6 @@ class SuffixCondition : public Condition {
 };
 
 class StatsCondition : public Condition {
-    protected:
-	Expression* m_Expression = nullptr;
     public:
 	StatsCondition(std::wstring value): Condition(ConditionType::STATS, value) {};
 	void Initialize(std::wstring& variables) override;
@@ -191,19 +187,19 @@ class AffixLevelCondition : public Condition {
 };
 
 class WeaponDamageCondition : public Condition {
-public:
+    public:
 	WeaponDamageCondition(std::wstring value) : Condition(ConditionType::WEAPON_DAMAGE, value) {};
 	bool Evaluate(Unit* pItem) override;
 };
 
 class ArmorDefenseCondition : public Condition {
-public:
+    public:
 	ArmorDefenseCondition(std::wstring value) : Condition(ConditionType::ARMOR_DEFENSE, value) {};
 	bool Evaluate(Unit* pItem) override;
 };
 
 class DefenseCondition : public Condition {
-public:
+    public:
 	DefenseCondition(std::wstring value) : Condition(ConditionType::ARMOR_DEFENSE, value) {};
 	bool Evaluate(Unit* pItem) override;
 };
@@ -241,9 +237,9 @@ class CharacterClassCondition : public Condition {
 };
 
 class CharacterLevelCondition : public Condition {;
-public:
-    CharacterLevelCondition(std::wstring value) : Condition(ConditionType::CHARACTER_LEVEL, value) {};
-    bool Evaluate(Unit* pItem) override;
+    public:
+	CharacterLevelCondition(std::wstring value) : Condition(ConditionType::CHARACTER_LEVEL, value) {};
+	bool Evaluate(Unit* pItem) override;
 };
 
 class CharacterNameCondition : public Condition {

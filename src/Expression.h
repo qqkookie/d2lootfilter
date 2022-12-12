@@ -48,99 +48,99 @@ enum class Token : uint8_t {
 	END
 };
 
-static const wchar_t* OPS[] = { L"", L" or ", L" and ", L"(", L")", L"!", L"!=", L"=", L">", L">=", L"<", L"<=", L" in ", L"-", L"+", L"*", L"/", L"Stat", L"Class", L"TabSkill", L"ClassSkill", L"ChargedSkill", L"Skill", L"Min", L"MinIn", L"Max", L",", L"", L"", L"True", L"False", L"" };
-
-class Expression {
-public:
-	virtual int32_t Evaluate(Unit* pItem) = 0;
-	virtual std::wstring ToString(Unit* pItem) = 0;
-	virtual void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) = 0;
+static const wchar_t* OPS[] = { 
+	L"", L" or ", L" and ", L"(", L")", L"!", L"!=", L"=", 
+	L">", L">=", L"<", L"<=", L" in ", L"-", L"+", L"*", L"/", 
+	L"Stat", L"Class", L"TabSkill", L"ClassSkill", L"ChargedSkill", L"Skill", 
+	L"Min", L"MinIn", L"Max", L",", L"", L"", L"True", L"False", L""
 };
 
-class Logical : public Expression {
-protected:
-	Token m_Operator;
-	Expression* m_Left;
-	Expression* m_Right;
-public:
-	Logical(Expression* left = nullptr, Expression* right = nullptr, Token op = Token::NONE) : m_Left(left), m_Right(right), m_Operator(op) {};
-	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+class Expression {
+    public:
+	virtual int32_t Evaluate(Unit* pItem) = 0;
+	virtual void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) = 0;
+	virtual std::wstring ToString(Unit* pItem) = 0;
 };
 
 class Binary : public Expression {
-protected:
+    protected:
 	Token m_Operator;
 	Expression* m_Left;
 	Expression* m_Right;
-public:
-	Binary(Expression* left = nullptr, Expression* right = nullptr, Token op = Token::NONE) : m_Left(left), m_Right(right), m_Operator(op) {};
+    public:
+	Binary(Token op, Expression *left, Expression *right) : m_Operator(op), m_Left(left), m_Right(right) {};
 	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
 	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+	std::wstring ToString(Unit* pItem) override;
 };
 
-class In : public Expression {
+class Unary : public Binary {
+public:
+	Unary(Token op, Expression* right) : Binary(op, right, right) {};
+	int32_t Evaluate(Unit* pItem) override;
+	std::wstring ToString(Unit* pItem) override;
+};
+
+class Logical : public Binary {
+public:
+	Logical(Token op, Expression* left, Expression* right) : Binary(op, left, right) {};
+	int32_t Evaluate(Unit* pItem) override;
+};
+
+class In : public Binary {
 protected:
-	Token m_Operator;
-	Expression* m_Left;
 	Expression* m_Min;
 	Expression* m_Max;
 public:
-	In(Expression* left = nullptr, Expression* min = nullptr, Expression* max = nullptr, Token op = Token::NONE) : m_Left(left), m_Min(min), m_Max(max), m_Operator(op) {};
+	In(Token op, Expression* left, Expression* min, Expression* max) : Binary(op, left, left), m_Min(min), m_Max(max) {};
 	int32_t Evaluate(Unit* pItem) override;
 	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
-};
-
-class Unary : public Expression {
-protected:
-	Token m_Operator;
-	Expression* m_Right;
-public:
-	Unary(Expression* right = nullptr, Token op = Token::NONE) : m_Right(right), m_Operator(op) {};
-	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
 };
 
 class Literal : public Expression {
 protected:
 	int32_t m_Value;
 public:
-	Literal(std::wstring value) { m_Value = stol(value); };
-	int32_t Evaluate(Unit* pItem) override;
+	Literal(int32_t value) : m_Value(value) {};
+	int32_t Evaluate(Unit* pItem) override { return m_Value; };
+	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {};
 	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
 };
 
-class Boolean : public Expression {
-protected:
-	int32_t m_Value;
+class Boolean : public Literal {
 public:
-	Boolean(int32_t value) { m_Value = value; };
-	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+	Boolean(int32_t value) : Literal(value) {};
 };
 
-typedef int32_t(*GlobalVariableFunction)(Unit* pUnit);
+typedef int32_t(*GlobalEvalFunction)(Unit* pUnit);
 
 class Variable : public Expression {
 protected:
-	std::wstring m_Variable;
+	std::wstring m_Name;
 	std::optional<int32_t> m_Value;
-	GlobalVariableFunction m_Func;
+	GlobalEvalFunction m_Eval;
 public:
-	Variable(std::wstring variable = L"");
-	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
+	Variable(std::wstring variable);
 	void SetValue(const int32_t v);
+	int32_t Evaluate(Unit* pItem) override;
 	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+	std::wstring ToString(Unit* pItem) override;
 };
 
-class Call : public Expression {
+class ListExpression : public Expression {
+protected:
+	std::vector<Expression*> m_List;
+public:
+	ListExpression() {}; //  : m_ValueList(nullptr) {};
+	void Push(Expression* exp) { m_List.push_back(exp); }
+	int32_t Evaluate(Unit* pItem) override;
+	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+	std::wstring ToString(Unit* pItem) override;
+	void SetValueList(std::unordered_map<std::wstring, int32_t>& variables) { SetVariables(variables); };
+
+};
+
+class FuncCall : public Expression {
 protected:
 	Token m_Func;
 	std::vector<Expression*> m_Args;
@@ -149,21 +149,13 @@ protected:
 	int32_t EvaluateChargedSkill(Unit* pItem, Stat stat, std::vector<int32_t>& args);
 	int32_t EvaluateStat(Unit* pItem, Stat stat, std::vector<int32_t>& args);
 public:
-	Call(Token func, std::vector<Expression*> args) : m_Func(func), m_Args(args) {};
+	FuncCall(Token func, std::vector<Expression*> args) : m_Func(func), m_Args(args) {};
 	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
 	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
+	std::wstring ToString(Unit* pItem) override;
 };
 
-class ListExpression : public Expression {
-protected:
-	std::vector<Expression*> m_List;
-public:
-	void Push(Expression* expression) { m_List.push_back(expression); }
-	int32_t Evaluate(Unit* pItem) override;
-	std::wstring ToString(Unit* pItem) override;
-	void SetVariables(std::unordered_map<std::wstring, int32_t>& variables) override;
-};
+// -----------------------------------------------------------------
 
 class TokenizerToken {
 protected:
@@ -205,15 +197,15 @@ public:
 class Parser {
 protected:
 	static Expression* _finishCall(Token call, Tokenizer* t);
-	static Expression* _primary(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _unary(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _factor(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _term(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _comparison(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _equality(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _and(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _or(Tokenizer* t, Expression* lhs = nullptr);
-	static Expression* _expression(Tokenizer* t, Expression* lhs = nullptr);
+	static Expression* _primary(Tokenizer* t, Expression* lhs);
+	static Expression* _unary(Tokenizer* t, Expression* lhs);
+	static Expression* _factor(Tokenizer* t, Expression* lhs);
+	static Expression* _term(Tokenizer* t, Expression* lhs);
+	static Expression* _comparison(Tokenizer* t, Expression* lhs);
+	static Expression* _equality(Tokenizer* t, Expression* lhs);
+	static Expression* _and(Tokenizer* t, Expression* lhs);
+	static Expression* _or(Tokenizer* t, Expression* lhs);
+	static Expression* _expression(Tokenizer* t, Expression* lhs);
 public:
 	static Expression* Parse(const wchar_t* expression);
 	static ListExpression* Parse(Variable* lhs, const wchar_t* expression);

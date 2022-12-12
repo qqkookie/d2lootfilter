@@ -74,7 +74,7 @@ static int32_t EvalCharacterMaxHP(Unit* pItem) {
     return (GetD2UnitStat(D2CLIENT_GetPlayerUnit(), Stat::MAXHP, 0));
 }
 
-static std::unordered_map<std::wstring, GlobalVariableFunction> GlobalVariables = {
+static std::unordered_map<std::wstring, GlobalEvalFunction> GlobalEvalList = {
     { L"{FilterLevel}", &EvalFilterLevel },
     { L"{PingLevel}", &EvalPingLevel },
     { L"{CharacterLevel}", &EvalCharacterLevel },
@@ -94,43 +94,10 @@ static std::unordered_map<std::wstring, GlobalVariableFunction> GlobalVariables 
     { L"{CharacterMaxHP}", &EvalCharacterMaxHP },
 };
 
-int32_t Logical::Evaluate(Unit* pItem) {
-    int32_t left = 0;
-    if (m_Left)
-        left = m_Left->Evaluate(pItem);
-    int32_t right = m_Right->Evaluate(pItem);
-    int32_t ret = 0;
-    //Logger::Info("Doing %d%s%d\n", left, OPS[static_cast<uint8_t>(m_Operator)], right);
-    switch (m_Operator) {
-    case Token::AND: ret = (left != 0) && (right != 0); break;
-    case Token::OR: ret = (left != 0) || (right != 0); break;
-    case Token::EQUALS: ret = left == right; break;
-    case Token::BANG_EQUALS: ret = left != right; break;
-    /*
-    case Token::GREATER_THAN: ret = left > right; break;
-    case Token::GREATER_THAN_EQUALS: ret = left >= right; break;
-    case Token::LESS_THAN: ret = left < right; break;
-    case Token::LESS_THAN_EQUALS: ret = left <= right; break;
-    */
-    default:
-        break;
-        //error...
-    }
-    //Logger::Info("Return %d%s%d = %d\n", left, OPS[static_cast<uint8_t>(m_Operator)], right, ret);
-    return ret;
-}
+// -----------------------------------------------------------------
 
-std::wstring Logical::ToString(Unit* pItem) {
-    return std::format(L"{}{}{}", m_Left->ToString(pItem), OPS[static_cast<uint8_t>(m_Operator)], m_Right->ToString(pItem));
-}
-
-void Logical::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    if (m_Left)
-        m_Left->SetVariables(variables);
-    m_Right->SetVariables(variables);
-}
-
-int32_t Binary::Evaluate(Unit* pItem) {
+int32_t Binary::Evaluate(Unit* pItem)
+{
     int32_t left = m_Left->Evaluate(pItem);
     int32_t right = m_Right->Evaluate(pItem);
     int32_t ret = 0;
@@ -148,158 +115,190 @@ int32_t Binary::Evaluate(Unit* pItem) {
     return ret;
 }
 
+void Binary::SetVariables(std::unordered_map<std::wstring, int32_t>& variables)
+{
+	_ASSERT(m_Left);
+	m_Left->SetVariables(variables);
+	m_Right->SetVariables(variables);
+}
+
 std::wstring Binary::ToString(Unit* pItem) {
-    return std::format(L"{}{}{}", m_Left->ToString(pItem), OPS[static_cast<uint8_t>(m_Operator)], m_Right->ToString(pItem));
+	return std::format(L"{} {} {}", m_Left->ToString(pItem), 
+		OPS[static_cast<uint8_t>(m_Operator)], m_Right->ToString(pItem));
 }
 
-void Binary::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    if (m_Left) 
-        m_Left->SetVariables(variables);
-    m_Right->SetVariables(variables);
+int32_t Logical::Evaluate(Unit* pItem)
+{
+	int32_t left = 0;
+	_ASSERT(m_Left);
+	left = m_Left->Evaluate(pItem);
+	int32_t right = m_Right->Evaluate(pItem);
+	int32_t ret = 0;
+	//Logger::Info("Doing %d%s%d\n", left, OPS[static_cast<uint8_t>(m_Operator)], right);
+	switch (m_Operator) {
+	case Token::AND: ret = (left != 0) && (right != 0); break;
+	case Token::OR: ret = (left != 0) || (right != 0); break;
+	case Token::EQUALS: ret = left == right; break;
+	case Token::BANG_EQUALS: ret = left != right; break;
+	/*
+	case Token::GREATER_THAN: ret = left > right; break;
+	case Token::GREATER_THAN_EQUALS: ret = left >= right; break;
+	case Token::LESS_THAN: ret = left < right; break;
+	case Token::LESS_THAN_EQUALS: ret = left <= right; break;
+	*/
+	default:
+		break;
+		//error...
+	}
+	//Logger::Info("Return %d%s%d = %d\n", left, OPS[static_cast<uint8_t>(m_Operator)], right, ret);
+	return ret;
 }
 
-int32_t In::Evaluate(Unit* pItem) {
+int32_t In::Evaluate(Unit* pItem) 
+{
     int32_t left = m_Left->Evaluate(pItem);
     int32_t min = m_Min->Evaluate(pItem);
     int32_t max = m_Max->Evaluate(pItem);
-    return left >= min
-        && left <= max;
+
+    return (left >= min && left <= max);
 }
 
 std::wstring In::ToString(Unit* pItem) {
-    return std::format(L"{}{}{}-{}", m_Left->ToString(pItem), OPS[static_cast<uint8_t>(m_Operator)], m_Min->ToString(pItem), m_Max->ToString(pItem));
-}
-
-void In::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    m_Left->SetVariables(variables);
-    m_Min->SetVariables(variables);
-    m_Max->SetVariables(variables);
+	return std::format(L"{} {} {}-{}", m_Left->ToString(pItem), 
+		OPS[static_cast<uint8_t>(m_Operator)], m_Min->ToString(pItem), m_Max->ToString(pItem));
 }
 
 int32_t Unary::Evaluate(Unit* pItem) {
-    int32_t right = m_Right->Evaluate(pItem);
-    int32_t ret = 0;
-    switch (m_Operator) {
-    case Token::BANG: ret = (right == 0); break;
-    case Token::MINUS: ret = -1 * m_Right->Evaluate(pItem); break;
-    default:
-        break;
-        //error
-    }
-    return ret;
+	int32_t right = m_Right->Evaluate(pItem);
+	int32_t ret = 0;
+	switch (m_Operator) {
+	case Token::BANG: ret = (right == 0); break;
+	case Token::MINUS: ret = -1 * m_Right->Evaluate(pItem); break;
+	default:
+		break;
+		//error
+	}
+	return ret;
 }
 
 std::wstring Unary::ToString(Unit* pItem) {
-    return std::format(L"{}{}", OPS[static_cast<uint8_t>(m_Operator)], m_Right->ToString(pItem));
-}
-
-void Unary::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    m_Right->SetVariables(variables);
-}
-
-int32_t Literal::Evaluate(Unit* pItem) {
-    return m_Value;
+	return std::format(L"{} {}", OPS[static_cast<uint8_t>(m_Operator)], m_Right->ToString(pItem));
 }
 
 std::wstring Literal::ToString(Unit* pItem) {
-    return std::format(L"{}", m_Value);
+	return std::format(L"{}", m_Value);
 }
 
-void Literal::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-}
-
-int32_t Boolean::Evaluate(Unit* pItem) {
-    return m_Value;
-}
-
-std::wstring Boolean::ToString(Unit* pItem) {
-    return std::format(L"{}", m_Value);
-}
-
-void Boolean::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-}
-
-Variable::Variable(std::wstring variable) {
-    m_Variable = variable;
-    if (GlobalVariables.contains(m_Variable)) {
-        m_Func = GlobalVariables[m_Variable];
-    }
-};
-
-int32_t Variable::Evaluate(Unit* pItem) {
-    if (m_Func != nullptr) {
-        return m_Func(pItem);
-    }
-    return m_Value.value_or(0);
-}
-
-std::wstring Variable::ToString(Unit* pItem) {
-    if (m_Func != nullptr) {
-        return std::format(L"{}({})", m_Variable, m_Func(pItem));
-    }
-    if (!m_Value) {
-        return std::format(L"{}(nullptr)", m_Variable);
-    }
-    return std::format(L"{}({})", m_Variable, m_Value.value());
+Variable::Variable(std::wstring variable) 
+{
+	m_Name = variable;
+	if (GlobalEvalList.contains(m_Name))
+		m_Eval = GlobalEvalList[m_Name];
 }
 
 void Variable::SetValue(const int32_t v) {
-    if (m_Func != nullptr) {
-        return;
-    }
-    m_Value = v;
+	if (m_Eval != nullptr)  return;
+	m_Value = v;
+}
+
+
+int32_t Variable::Evaluate(Unit* pItem)
+{
+	if (m_Eval != nullptr) 
+		return m_Eval(pItem);
+	return m_Value.value_or(0);
 }
 
 void Variable::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    if (variables.contains(m_Variable)) {
-        SetValue(variables[m_Variable]);
-    }
+	if (variables.contains(m_Name))
+		SetValue(variables[m_Name]);
 }
 
-int32_t Call::EvaluateClass(Unit* pItem, std::vector<int32_t>& args) {
-    for (auto& arg : args) {
-        // item type shoudn't be ItemType::NONE
-        if (arg > 0 && D2COMMON_ITEMS_CheckItemTypeId(pItem, static_cast<ItemType>(arg))) {
-            return 1;
-        }
-    }
-    return 0;
+std::wstring Variable::ToString(Unit* pItem) 
+{
+	if (m_Eval != nullptr) 
+		return std::format(L"{}({})", m_Name, m_Eval(pItem));
+	if (!m_Value) 
+		return std::format(L"{}(nullptr)", m_Name);
+
+	return std::format(L"{}({})", m_Name, m_Value.value());
 }
 
-int32_t Call::EvaluateChargedSkill(Unit* pItem, Stat stat, std::vector<int32_t>& args) {
-    if (!(pItem->pStatListEx && (pItem->pStatListEx->dwFlags & StatlistFlags::EXTENDED))) {
-        return 0;
-    }
-    StatList* pStatList = pItem->pStatListEx->pMyLastList;
-    while (pStatList && !(0x40 & pStatList->dwFlags))
-    {
-        pStatList = pStatList->pPrevLink;
-    }
-    if (!pStatList) {
-        return 0;
-    }
-    int32_t value = 0;
-    int32_t layer = 0;
-    if (args.size() > 0) layer = args[0];
-    StatsArray arr = pStatList->Stats;
-    for (uint8_t i = 0; i < arr.nStatCount; i++) {
-        UnitStat stat = arr.pStat[i];
-        if (stat.nStat == static_cast<uint16_t>(Stat::ITEM_CHARGED_SKILL)
-            && (stat.nLayer >> 6) == layer) {
-            int32_t level = stat.nStat & 0x3F;
-            value = (level > value) ? level : value;
-        }
-    }
-    return value;
+int32_t ListExpression::Evaluate(Unit* pItem) 
+{
+	//return true if any are true
+	return std::any_of(m_List.begin(), m_List.end(),
+		[pItem](Expression* expression) { return expression->Evaluate(pItem) != 0; });
 }
 
-int32_t Call::EvaluateStat(Unit* pItem, Stat stat, std::vector<int32_t>& args) {
-    int32_t layer = 0;
-    if (args.size() > 0) layer = args[0];
-    return GetD2UnitStat(pItem, stat, layer);
+std::wstring ListExpression::ToString(Unit* pItem)
+{
+	std::wostringstream ss;
+	for (auto& expression : m_List) {
+		if (&expression != &m_List.front()) 
+			ss << L" or ";
+		ss << expression->ToString(pItem).c_str();
+	}
+	return ss.str();
 }
 
-int32_t Call::Evaluate(Unit* pItem) {
+void ListExpression::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
+	for (auto& expression : m_List) 
+		expression->SetVariables(variables);
+}
+
+// -----------------------------------------------------------------
+
+int32_t FuncCall::EvaluateClass(Unit* pItem, std::vector<int32_t>& args) 
+{
+	for (auto& arg : args) {
+		// item type shoudn't be ItemType::NONE
+		if (arg > 0 && D2COMMON_ITEMS_CheckItemTypeId(pItem, static_cast<ItemType>(arg))) 
+			return 1;
+	}
+	return 0;
+}
+
+int32_t FuncCall::EvaluateChargedSkill(Unit* pItem, Stat stat, std::vector<int32_t>& args) 
+{
+	if (!(pItem->pStatListEx && (pItem->pStatListEx->dwFlags & StatlistFlags::EXTENDED))) 
+		return 0;
+  
+	StatList* pStatList = pItem->pStatListEx->pMyLastList;
+	while (pStatList && !(0x40 & pStatList->dwFlags))
+		pStatList = pStatList->pPrevLink;
+
+	if (!pStatList)
+		return 0;
+
+	int32_t value = 0;
+	int32_t layer = 0;
+
+	if (args.size() > 0) 
+		layer = args[0];
+
+	StatsArray arr = pStatList->Stats;
+	for (uint8_t i = 0; i < arr.nStatCount; i++) {
+		UnitStat stat = arr.pStat[i];
+		if (stat.nStat == static_cast<uint16_t>(Stat::ITEM_CHARGED_SKILL)
+		&& (stat.nLayer >> 6) == layer) {
+			int32_t level = stat.nStat & 0x3F;
+			value = (level > value) ? level : value;
+		}
+	}
+	return value;
+}
+
+int32_t FuncCall::EvaluateStat(Unit* pItem, Stat stat, std::vector<int32_t>& args)
+{
+	    int32_t layer = 0;
+	    if (args.size() > 0) 
+		    layer = args[0];
+	    return GetD2UnitStat(pItem, stat, layer);
+}
+
+int32_t FuncCall::Evaluate(Unit* pItem) 
+{
     std::vector<int32_t> args;
     std::transform(m_Args.begin(), m_Args.end(), std::back_inserter(args),
         [pItem](Expression*& expression) { return expression->Evaluate(pItem); });
@@ -352,44 +351,23 @@ int32_t Call::Evaluate(Unit* pItem) {
     }
 }
 
-std::wstring Call::ToString(Unit* pItem) {
-    std::wostringstream ss;
-    for (auto& expression : m_Args) {
-        if (&expression != &m_Args.front()) {
-            ss << L", ";
-        }
-        ss << expression->ToString(pItem);
-    }
-    return std::format(L"{}({})({})", OPS[static_cast<uint8_t>(m_Func)], ss.str(), Evaluate(pItem));
+void FuncCall::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
+	for (auto& expression : m_Args) 
+		expression->SetVariables(variables);
 }
 
-void Call::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    for (auto& expression : m_Args) {
-        expression->SetVariables(variables);
-    }
+std::wstring FuncCall::ToString(Unit* pItem) 
+{
+	std::wostringstream ss;
+	for (auto& expression : m_Args) {
+		if (&expression != &m_Args.front()) 
+			ss << L", ";
+		ss << expression->ToString(pItem);
+	}
+	return std::format(L"{}({})({})", OPS[static_cast<uint8_t>(m_Func)], ss.str(), Evaluate(pItem));
 }
 
-int32_t ListExpression::Evaluate(Unit* pItem) {
-    //return true if any are true
-    return std::any_of(m_List.begin(), m_List.end(), [pItem](Expression* expression) { return expression->Evaluate(pItem) != 0; });
-}
-
-std::wstring ListExpression::ToString(Unit* pItem) {
-    std::wostringstream ss;
-    for (auto& expression : m_List) {
-        if (&expression != &m_List.front()) {
-            ss << L" or ";
-        }
-        ss << expression->ToString(pItem).c_str();
-    }
-    return ss.str();
-}
-
-void ListExpression::SetVariables(std::unordered_map<std::wstring, int32_t>& variables) {
-    for (auto& expression : m_List) {
-        expression->SetVariables(variables);
-    }
-}
+// -----------------------------------------------------------------
 
 bool Tokenizer::IsNull(wchar_t c) {
     return c == L'\0';
@@ -415,7 +393,8 @@ bool Tokenizer::IsOperator(const wchar_t*& expression) {
         || wcsncmp(expression, L"/", 1) == 0;
 }
 
-std::wstring Tokenizer::ParseVariable(const wchar_t*& expression) {
+std::wstring Tokenizer::ParseVariable(const wchar_t*& expression)
+{
     int s = 0;
     while (!IsOperator(expression) && !IsNull(*expression)) {
         expression += 1;
@@ -424,7 +403,8 @@ std::wstring Tokenizer::ParseVariable(const wchar_t*& expression) {
     return std::wstring(expression - s, s);
 }
 
-std::wstring Tokenizer::ParseQuotedVariable(const wchar_t*& expression) {
+std::wstring Tokenizer::ParseQuotedVariable(const wchar_t*& expression) 
+{
     int s = 1;
     expression += 1;
     while (*expression != '"' && *expression != '}' && !IsNull(*expression)) {
@@ -438,7 +418,8 @@ std::wstring Tokenizer::ParseQuotedVariable(const wchar_t*& expression) {
     return std::wstring(expression - s, s - 1);
 }
 
-std::wstring Tokenizer::ParseDigit(const wchar_t*& expression) {
+std::wstring Tokenizer::ParseDigit(const wchar_t*& expression) 
+{
     int s = 0;
     while (std::isdigit(*expression) && !IsNull(*expression)) {
         expression += 1;
@@ -447,7 +428,8 @@ std::wstring Tokenizer::ParseDigit(const wchar_t*& expression) {
     return std::wstring(expression - s, s);
 }
 
-void Tokenizer::Tokenize(const wchar_t*& expression) {
+void Tokenizer::Tokenize(const wchar_t*& expression) 
+{
     while (!IsNull(*expression)) {
         if (*expression == L'(') { expression++; m_Tokens.push_back(new TokenizerToken(Token::LEFT_PAREN)); }
         else if (*expression == L')') { expression++; m_Tokens.push_back(new TokenizerToken(Token::RIGHT_PAREN)); }
@@ -491,7 +473,8 @@ void Tokenizer::Tokenize(const wchar_t*& expression) {
     }
 }
 
-bool Tokenizer::Match(Token t) {
+bool Tokenizer::Match(Token t)
+{
     if (m_Current < m_Tokens.size() && m_Tokens[m_Current]->GetTokenType() == t) {
         m_Current++;
         return true;
@@ -503,10 +486,11 @@ bool Tokenizer::Check(Token t) {
     return Peek()->GetTokenType() == t;
 }
 
-TokenizerToken* Tokenizer::Previous() {
-    if (m_Current <= 0) {
+TokenizerToken* Tokenizer::Previous() 
+{
+    if (m_Current <= 0)
         return nullptr;
-    }
+
     return m_Tokens[m_Current - 1];
 }
 
@@ -522,24 +506,26 @@ void Tokenizer::Insert(TokenizerToken* t) {
     m_Tokens.insert(m_Tokens.begin() + m_Current, t);
 }
 
-Expression* Parser::_finishCall(Token call, Tokenizer* t) {
+Expression* Parser::_finishCall(Token call, Tokenizer* t) 
+{
     std::vector<Expression*> arguments;
     while (!t->Match(Token::RIGHT_PAREN)) {
         do {
-            arguments.push_back(_expression(t));
+            arguments.push_back(_expression(t, nullptr));
         } while (t->Match(Token::COMMA));
     }
-    return new Call(call, arguments);
+    return new FuncCall(call, arguments);
 }
 
-Expression* Parser::_primary(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_primary(Tokenizer* t, Expression* lhs) 
+{
     if (lhs != nullptr) { return lhs; }
     if (t->Match(Token::VARIABLE)) { return new Variable(t->Previous()->GetValue()); }
-    if (t->Match(Token::NUMBER)) { return new Literal(t->Previous()->GetValue()); }
+    if (t->Match(Token::NUMBER)) { return new Literal(stoi(t->Previous()->GetValue())); }
     if (t->Match(Token::_TRUE)) { return new Boolean(1); }
     if (t->Match(Token::_FALSE)) { return new Boolean(0); }
     if (t->Match(Token::LEFT_PAREN)) {
-        Expression* expr = _expression(t);
+        Expression* expr = _expression(t, nullptr);
         if (t->Match(Token::RIGHT_PAREN)) {
             return expr;
         }
@@ -563,51 +549,55 @@ Expression* Parser::_primary(Tokenizer* t, Expression* lhs) {
     //throw error. one of the above should of been matched
 }
 
-Expression* Parser::_unary(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_unary(Tokenizer* t, Expression* lhs) 
+{
     if (t->Match(Token::BANG) || t->Match(Token::MINUS)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _unary(t);
-        return new Unary(rhs, op->GetTokenType());
+        Expression* rhs = _unary(t, nullptr);
+        return new Unary(op->GetTokenType(), rhs );
     }
     Expression* expr = _primary(t, lhs);
     return expr;
 }
 
-Expression* Parser::_factor(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_factor(Tokenizer* t, Expression* lhs) 
+{
     Expression* expr = _unary(t, lhs);
     while (t->Match(Token::MULTIPLY) || t->Match(Token::DIVIDE)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _unary(t);
-        expr = new Binary(expr, rhs, op->GetTokenType());
+        Expression* rhs = _unary(t, nullptr);
+        expr = new Binary(op->GetTokenType(), expr, rhs );
     }
     return expr;
 }
 
-Expression* Parser::_term(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_term(Tokenizer* t, Expression* lhs) 
+{
     Expression* expr = _factor(t, lhs);
     while (t->Match(Token::PLUS) || t->Match(Token::MINUS)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _factor(t);
-        expr = new Binary(expr, rhs, op->GetTokenType());
+        Expression* rhs = _factor(t, nullptr);
+        expr = new Binary(op->GetTokenType(), expr, rhs);
     }
     return expr;
 }
 
-Expression* Parser::_comparison(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_comparison(Tokenizer* t, Expression* lhs) 
+{
     Expression* expr = _term(t, lhs);
     while (t->Match(Token::GREATER_THAN) || t->Match(Token::GREATER_THAN_EQUALS)
         || t->Match(Token::LESS_THAN) || t->Match(Token::LESS_THAN_EQUALS)
         || t->Match(Token::_IN)) {
         TokenizerToken* op = t->Previous();
         if (op->GetTokenType() != Token::_IN) {
-            Expression* rhs = _term(t);
-            expr = new Logical(expr, rhs, op->GetTokenType());
+            Expression* rhs = _term(t, nullptr);
+            expr = new Logical(op->GetTokenType(), expr, rhs);
         }
         else {
-            Expression* min = _primary(t);
+            Expression* min = _primary(t, nullptr);
             if (t->Match(Token::MINUS)) {
-                Expression* max = _primary(t);
-                expr = new In(expr, min, max, op->GetTokenType());
+                Expression* max = _primary(t, nullptr);
+                expr = new In(op->GetTokenType(), expr, min, max);
             }
             else {
                 //throw error...
@@ -617,32 +607,35 @@ Expression* Parser::_comparison(Tokenizer* t, Expression* lhs) {
     return expr;
 }
 
-Expression* Parser::_equality(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_equality(Tokenizer* t, Expression* lhs)
+{
     Expression* expr = _comparison(t, lhs);
     while (t->Match(Token::EQUALS) || t->Match(Token::BANG_EQUALS)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _comparison(t);
-        expr = new Logical(expr, rhs, op->GetTokenType());
+        Expression* rhs = _comparison(t, nullptr);
+        expr = new Logical(op->GetTokenType(), expr, rhs);
     }
     return expr;
 }
 
-Expression* Parser::_and(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_and(Tokenizer* t, Expression* lhs)
+{
     Expression* expr = _equality(t, lhs);
     while (t->Match(Token::AND)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _equality(t);
-        expr = new Logical(expr, rhs, op->GetTokenType());
+        Expression* rhs = _equality(t, nullptr);
+        expr = new Logical(op->GetTokenType(), expr, rhs);
     }
     return expr;
 }
 
-Expression* Parser::_or(Tokenizer* t, Expression* lhs) {
+Expression* Parser::_or(Tokenizer* t, Expression* lhs) 
+{
     Expression* expr = _and(t, lhs);
     while (t->Match(Token::OR)) {
         TokenizerToken* op = t->Previous();
-        Expression* rhs = _and(t);
-        expr = new Logical(expr, rhs, op->GetTokenType());
+        Expression* rhs = _and(t, nullptr);
+        expr = new Logical(op->GetTokenType(), expr, rhs );
     }
     return expr;
 }
@@ -652,13 +645,15 @@ Expression* Parser::_expression(Tokenizer* t, Expression* lhs) {
     return expr;
 }
 
-Expression* Parser::Parse(const wchar_t* expression) {
+Expression* Parser::Parse(const wchar_t* expression) 
+{
     Tokenizer* tokenizer = new Tokenizer(expression);
-    Expression* expr = _expression(tokenizer);
+    Expression* expr = _expression(tokenizer, nullptr);
     return expr;
 }
 
-ListExpression* Parser::Parse(Variable* lhs, const wchar_t* expression) {
+ListExpression* Parser::Parse(Variable* lhs, const wchar_t* expression)
+{
     ListExpression* list = new ListExpression();
     if (! expression || wcslen(expression) == 0)
         return list;
@@ -678,9 +673,10 @@ ListExpression* Parser::Parse(Variable* lhs, const wchar_t* expression) {
     return list;
 }
 
-Expression* Parser::ParseCall(Token func, const wchar_t* args) {
+Expression* Parser::ParseCall(Token func, const wchar_t* args) 
+{
     std::wstring formatted = std::format(L"({})", args);
     Tokenizer* call = new Tokenizer(formatted.c_str());
     call->Insert(new TokenizerToken(func));
-    return _expression(call);
+    return _expression(call, nullptr);
 }
