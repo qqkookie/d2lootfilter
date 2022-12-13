@@ -7,20 +7,12 @@
 #include "Utils.h"
 
 
-static int32_t EvalFilterLevel(Unit* pItem) {
-    return FilterLevel;
-}
-
-static int32_t EvalPingLevel(Unit* pItem) {
-    return PingLevel;
-}
-
-static int32_t EvalCharacterLevel(Unit* pItem) {
-    return GetCharacterLevel();
-}
-
 static int32_t EvalItemLevel(Unit* pItem) {
     return GetItemLevel(pItem);
+}
+
+static int32_t EvalItemCode(Unit* pItem) {
+    return GetItemsTxt(pItem).dwCode;
 }
 
 static int32_t EvalQualityLevel(Unit* pItem) {
@@ -43,22 +35,14 @@ static int32_t EvalSocket(Unit* pItem) {
     return GetD2UnitStat(pItem, Stat::ITEM_NUMSOCKETS, 0);
 }
 
-static int32_t EvalRandom(Unit* pItem) {
-    return (rand() % 100);
-}
-
 static int32_t EvalPrice(Unit* pItem) {
     return GetItemPrice(pItem);
 }
 
-static int32_t EvalRuneNumber(Unit* pItem) {
+static int32_t EvalRuneGrade(Unit* pItem) {
     if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE))
 	return  std::stoi(std::string(&GetItemsTxt(pItem).szCode[1], 3));
     return 0;
-}
-
-static int32_t EvalItemCode(Unit* pItem) {
-    return GetItemsTxt(pItem).dwCode;
 }
 
 static int32_t EvalWeaponDamage(Unit* pItem) {
@@ -70,28 +54,45 @@ static int32_t EvalItemSize(Unit* pItem) {
     return (tt.nInvWidth * tt.nInvHeight);
 }
 
+static int32_t EvalCharacterLevel(Unit* pItem) {
+    return GetCharacterLevel();
+}
+
 static int32_t EvalCharacterMaxHP(Unit* pItem) {
     return (GetD2UnitStat(D2CLIENT_GetPlayerUnit(), Stat::MAXHP, 0));
 }
 
+static int32_t EvalPingLevel(Unit* pItem) {
+    return PingLevel;
+}
+
+static int32_t EvalFilterLevel(Unit* pItem) {
+    return FilterLevel;
+}
+
+static int32_t EvalRandom(Unit* pItem) {
+    return (rand() % 100);
+}
+
 static std::unordered_map<std::wstring, GlobalEvalFunction> GlobalEvalList = {
-    { L"{FilterLevel}", &EvalFilterLevel },
-    { L"{PingLevel}", &EvalPingLevel },
-    { L"{CharacterLevel}", &EvalCharacterLevel },
     { L"{ItemLevel}", &EvalItemLevel },
+    { L"{ItemCode}", &EvalItemCode },
     { L"{QualityLevel}", &EvalQualityLevel },
     { L"{MagicLevel}", &EvalMagicLevel },
     { L"{AffixLevel}", &EvalAffixLevel },
     { L"{CraftAffixLevel}", &EvalCraftAffixLevel },
-
     { L"{Sockets}", &EvalSocket },
-    { L"{Random99}", &EvalRandom }, 
     { L"{Price}", &EvalPrice },
-    { L"{RuneNumber}", &EvalRuneNumber },
-    { L"{ItemCode}", &EvalItemCode },
+    { L"{RuneGrade}", &EvalRuneGrade },
     { L"{WeaponDamage}", &EvalWeaponDamage },
     { L"{ItemSize}", &EvalItemSize },
+
+    { L"{CharacterLevel}", &EvalCharacterLevel },
     { L"{CharacterMaxHP}", &EvalCharacterMaxHP },
+
+    { L"{PingLevel}", &EvalPingLevel },
+    { L"{FilterLevel}", &EvalFilterLevel },
+    { L"{Random99}", &EvalRandom },
 };
 
 // -----------------------------------------------------------------
@@ -378,8 +379,8 @@ bool Tokenizer::IsOperator(const wchar_t*& expression) {
         || _wcsnicmp(expression, L"true", 4) == 0
         || _wcsnicmp(expression, L"false", 5) == 0
         || _wcsnicmp(expression, L" or ", 4) == 0
-        || _wcsnicmp(expression, L"|", 1) == 0
-        || _wcsnicmp(expression, L"&", 1) == 0
+        || _wcsnicmp(expression, L"||", 2) == 0
+        || _wcsnicmp(expression, L"&&", 2) == 0
         || wcsncmp(expression, L",", 1) == 0
         || wcsncmp(expression, L"=", 1) == 0
         || wcsncmp(expression, L"<", 1) == 0

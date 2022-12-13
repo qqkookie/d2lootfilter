@@ -74,6 +74,14 @@ static std::wstring TokItemTypeName(ActionResult* action, Unit* pItem) {
     return ItemTypesLookup[static_cast<int32_t>(GetItemsTxt(pItem).dwCode)];
 }
 
+static std::wstring TokItemCode(ActionResult* action, Unit* pItem) {
+	return std::to_wstring(GetItemsTxt(pItem).dwCode);
+}
+
+static std::wstring TokAffixLevel(ActionResult* action, Unit* pItem) {
+	return std::to_wstring(GetAffixLevel(pItem));
+}
+
 static std::wstring TokItemSockets(ActionResult* action, Unit* pItem) {
     return std::to_wstring(GetD2UnitStat(pItem, Stat::ITEM_NUMSOCKETS, 0));
 }
@@ -82,39 +90,71 @@ static std::wstring TokItemPrice(ActionResult* action, Unit* pItem) {
     return std::to_wstring(GetItemPrice(pItem));
 }
 
-static std::wstring TokPotionNumber(ActionResult* action, Unit* pItem)
+static std::wstring TokPotionGrade(ActionResult* action, Unit* pItem)
 {
-    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::HEALING_POTION)
-	|| D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::MANA_POTION)) {
-	return GetItemCode(pItem).substr(2);
-    }
-    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::REJUV_POTION)) {
+	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::HEALING_POTION)
+		|| D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::MANA_POTION))
+		return GetItemCode(pItem).substr(2);
+	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::REJUV_POTION)) {
+		std::wstring code = GetItemCode(pItem);
+		return code == L"rvl" ? L"2" : L"1";
+	}
+	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::POTION))
+		return L"1";
+
+	if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::MISSILE_POTION)) {
+		switch (GetItemCode(pItem).at(2)) {
+		case 'l' : return L"1";		// Fulminating Potion, Strangling Gas Potion
+		case 'm': return L"2";		// Exploding Potion, Choking Gas Potion
+		case 's': return L"3";		// Oil Potion, Rancid Gas Potion
+		}
+	}
+	return L"";
+}
+
+static std::wstring TokRuneGrade(ActionResult* action, Unit* pItem) 
+{
+    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE))
+		return std::to_wstring(_wtoi(GetItemCode(pItem).substr(1).c_str()));
+    return L"";
+}
+
+static std::wstring TokGemGrade(ActionResult* action, Unit* pItem)
+{
+	static const wchar_t gemgrade[] = L"cfslp";
+	static const wchar_t skullgrade[] = L"cfulz";
+	static const std::wstring grades(L"12345");
+
+	if (!D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::GEM))
+		return L"";
 	std::wstring code = GetItemCode(pItem);
-	return code == L"rvl" ? L"2" : L"1";
-    }
-    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::POTION)) {
-	return L"1";
-    }
-    return L"";
+
+	if (code.compare(L"gzv") == 0)	// Flawless Amethyst
+		return (L"4");
+	else if (code[0] == L'g')
+		return grades.substr(wcschr(gemgrade, code[1]) - gemgrade, 1);
+	else if (code.compare(0, 2, L"sk") == 0)
+		return grades.substr(wcschr(skullgrade, code[2]) - skullgrade, 1);
+	return L"";
 }
 
-static std::wstring TokRuneNumber(ActionResult* action, Unit* pItem) {
-    if (D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE)) {
-	return std::to_wstring(_wtoi(GetItemCode(pItem).substr(1).c_str()));
-    }
-    return L"";
-}
+static std::wstring TokGemColor(ActionResult* action, Unit* pItem)
+{
+	// Skull, Topaz,  Amethyst, Sapphire, Ruby, Emerald, Diamond
+	static const wchar_t *gemcolors[] = { TEXT_GRAY, TEXT_YELLOW,
+		TEXT_PURPLE, TEXT_BLUE, TEXT_RED, TEXT_MEDIUM_GREEN, TEXT_WHITE, };
 
-static std::wstring TokItemCode(ActionResult* action, Unit* pItem) {
-    return std::to_wstring(GetItemsTxt(pItem).dwCode);
-}
+	static const wchar_t gemkind[] = L"kyvbrgw";
 
-static std::wstring TokDefense(ActionResult* action, Unit* pItem) {
-    return std::to_wstring(GetD2UnitStat(pItem, Stat::ARMORCLASS, 0));
-}
+	if (!D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::GEM))
+		return L"";
+	std::wstring code = GetItemCode(pItem);
 
-static std::wstring TokAffixLevel(ActionResult* action, Unit* pItem) {
-    return std::to_wstring(GetAffixLevel(pItem));
+	if (code[0] == L'g') 
+		return std::wstring(gemcolors[wcschr(gemkind, code[2]) - gemkind]);
+	else if (code.compare(0, 2, L"sk") == 0)
+		return gemcolors[0];
+	return L"";
 }
 
 static std::wstring TokNewline(ActionResult* action, Unit* pItem) {
@@ -128,15 +168,18 @@ void EvaluteTokenValues(ActionResult *action, Unit* pItem)
 {
 	typedef std::wstring(*TokenReplaceFunction)(ActionResult* action, Unit* pItem);
 	static std::unordered_map<std::wstring, TokenReplaceFunction> TOKEN_REPLACEMENT_FUNCTIONS = {
-	{ L"{Sockets}", &TokItemSockets },
-	{ L"{Price}", &TokItemPrice },
-	{ L"{RuneNumber}", &TokRuneNumber },
-	{ L"{PotionNumber}", &TokPotionNumber },
-
 	{ L"{ItemLevel}", &TokItemLevel },
 	{ L"{ItemType}", &TokItemTypeName },
 	{ L"{ItemTCode}", &TokItemCode },
 	{ L"{AffixLevel}", &TokAffixLevel },
+
+	{ L"{Sockets}", &TokItemSockets },
+	{ L"{Price}", &TokItemPrice },
+	{ L"{PotionGrade}", &TokPotionGrade },
+	{ L"{RuneGrade}", &TokRuneGrade },
+	{ L"{GemGrade}", &TokGemGrade },
+	{ L"{GemColor}", &TokGemColor },
+
 	{ L"{NewLine}", &TokNewline } };
 
 	TOKEN_VALUES.clear();

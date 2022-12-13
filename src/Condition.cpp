@@ -31,11 +31,11 @@ void InitTypesCodesRunesList() {
 	wCode = trim(wCode);
 	ItemCodeList[wCode] = pItemTxt.dwCode;
 	if (pItemTxt.wType[0] == ItemType::RUNE) {
-	    int nRuneNumber = std::stoi(std::string(&pItemTxt.szCode[1], 3));
-	    RuneList[wNameStr] = nRuneNumber;
+	    int nRuneGrade = std::stoi(std::string(&pItemTxt.szCode[1], 3));
+	    RuneList[wNameStr] = nRuneGrade;
 	    size_t nFound = wNameStr.find(L" ");
 	    if (nFound != std::wstring::npos) {
-		RuneList[wNameStr.substr(0, nFound)] = nRuneNumber;
+		RuneList[wNameStr.substr(0, nFound)] = nRuneGrade;
 	    }
 	}
     }
@@ -148,8 +148,8 @@ bool RuneCondition::Evaluate(Unit* pItem) {
     if (!D2COMMON_ITEMS_CheckItemTypeId(pItem, ItemType::RUNE)) {
 	return false;
     }
-    int nRuneNumber = std::stoi(std::string(&GetItemsTxt(pItem).szCode[1], 3));
-    m_Left->SetValue(nRuneNumber);
+    int nRuneGrade = std::stoi(std::string(&GetItemsTxt(pItem).szCode[1], 3));
+    m_Left->SetValue(nRuneGrade);
     return m_Expression->Evaluate(pItem);
 }
 
